@@ -1,0 +1,23 @@
+# MATLAB
+*.asv
+*.autosave
+slprj/
+codegen/
+
+# LaTeX
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Editores
+.vscode/
+.idea/
+*.tmp
