@@ -1,0 +1,391 @@
+\section{Metodología}
+\subsection{Modelo del sistema}
+El modelo estudiado corresponde al sistema UMZ-SIRS propuesto por Bulai et al. (2024), quienes acoplan una dinámica rápida de tipo Unaware–Misinformed–Skeptical (UMZ) con una dinámica lenta de tipo SIRS con demografía. La capa rápida describe la evolución de tres subpoblaciones —individuos no informados (U), desinformados (M) y escépticos a la desinformación (Z)— y evoluciona en la variable temporal rápida t según
+
+\begin{align}
+    \frac{dU}{dt} &= \mu_1 - b_1 UM - \bar{b}_2(I)\,UZ - \mu_1 U, \\
+    \frac{dM}{dt} &= b_1 UM - \mu_1 M, \\
+    \frac{dZ}{dt} &= \bar{b}_2(I)\,UZ - \mu_1 Z,
+\end{align}
+
+donde $b_1$ es la tasa a la que un individuo no informado se vuelve
+desinformado, $\bar{b}_2(I)$ es la tasa a la que se vuelve escéptico,
+$\mu_1$ es la tasa de pérdida de interés en el tema y $K \in [0,1)$
+regula la sensibilidad de la población a la evolución real de la
+epidemia.
+
+La capa lenta describe la dinámica epidemiológica en la variable
+temporal lenta $\tau = \varepsilon t$:
+
+\begin{align}
+    \frac{dS}{d\tau} &= \mu_2 - \bar{\beta}(M,Z)\,SI + \eta R - \mu_2 S, \\
+    \frac{dI}{d\tau} &= \bar{\beta}(M,Z)\,SI - \gamma I - \mu_2 I, \\
+    \frac{dR}{d\tau} &= \gamma I - \eta R - \mu_2 R,
+\end{align}
+
+donde $\gamma$ es la tasa de recuperación, $\eta$ es la tasa de pérdida
+de inmunidad y $\mu_2$ es la tasa de natalidad/mortalidad. Los términos
+de acoplamiento entre ambas capas son
+
+\begin{equation}
+    \bar{b}_2(I) := \frac{b_2}{1-KI}, \qquad
+    \bar{\beta}(M,Z) := \beta\,\frac{1+M}{1+Z},
+\end{equation}
+
+de modo que $\bar{\beta}(M,Z)$ es la tasa de contagio efectiva,
+modulada por la proporción de desinformados y escépticos. El parámetro
+adimensional $\varepsilon \ll 1$ formaliza la separación de escalas: la
+información se propaga en una escala de tiempo mucho más rápida que la
+epidemia. Ambos subsistemas conservan la población total normalizada
+($U+M+Z=1$, $S+I+R=1$) en todo instante, dando lugar a un sistema
+acoplado de seis ecuaciones diferenciales ordinarias no lineales.
+
+
+\subsection{Supuestos y simplificaciones}
+
+\begin{itemize}[itemsep=2pt, topsep=4pt, parsep=0pt]
+    \item La población total de cada capa se mantiene normalizada y
+    constante ($N=1$), sin mortalidad inducida por la enfermedad,
+    conforme al planteamiento original de Bulai et al. (2024).
+    \item Se considera mezcla homogénea en ambas capas, sin estructura
+    espacial ni de contacto en red.
+    \item Los parámetros de la capa informativa ($b_1$, $b_2$, $\mu_1$) son
+    de orden $\mathcal{O}(1)$ respecto a la escala rápida, mientras que los
+    parámetros epidemiológicos ($\beta$, $\gamma$, $\eta$, $\mu_2$) se
+    expresan en la escala lenta; la separación de escalas se introduce
+    mediante el factor explícito $\varepsilon\ll 1$ en las ecuaciones de la
+    capa epidemiológica.
+    \item El acoplamiento entre capas es unidireccional en la variable
+    rápida ($I$ modula la tasa $\bar{b}_2$) y bidireccional en la
+    variable lenta ($M$ y $Z$ modulan $\bar{\beta}$).
+    \item No se contempla reinfección inmediata, memoria ni retardos
+    en ninguno de los seis compartimentos; el sistema conserva una
+    estructura markoviana de primer orden.
+\end{itemize}
+
+
+
+\subsection{Métodos numéricos y arquitectura de resolución}
+
+La separación de las escalas rápida y lenta hace necesario comparar estrategias de integración con diferentes propiedades de precisión y estabilidad. Se implementaron Euler explícito y Runge--Kutta de cuarto orden (RK4), ambos de paso fijo; Runge--Kutta--Fehlberg 4(5) (RKF45), con ajuste adaptativo del paso; y Euler hacia atrás, como integrador implícito. La Tabla~\ref{tab:metodos} distingue los cuatro integradores temporales de los procedimientos internos para resolver las ecuaciones algebraicas resultantes.
+
+\begin{table}[htbp]
+\centering
+\caption{Métodos numéricos implementados y su función en el estudio.}
+\label{tab:metodos}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.16}
+\begin{tabularx}{\columnwidth}{@{}p{1.15cm}p{1.00cm}X@{}}
+\toprule
+\textbf{Método} & \textbf{Tipo} & \textbf{Propósito} \\
+\midrule
+\multicolumn{3}{@{}l}{\textit{Integradores explícitos}} \\
+Euler explícito & Paso fijo; orden 1 & Referencia elemental para evaluar error y estabilidad. \\
+RK4 & Paso fijo; orden 4 & Examinar precisión y costo con pasos fijos. \\
+RKF45 & Adaptativo; órdenes 4(5) & Adaptar el paso mediante una estimación de error local. \\
+\midrule
+\multicolumn{3}{@{}l}{\textit{Integrador implícito y solucionadores internos}} \\
+Euler hacia atrás & Integrador; orden 1 & Integrar el sistema con discretización implícita. \\
+Newton--Raphson & No lineal & Resolver las seis ecuaciones algebraicas de cada paso implícito. \\
+Gauss--Seidel & Lineal & Resolver aproximadamente los sistemas lineales de Newton. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+El esquema implícito se organizó en tres niveles anidados. Primero, Euler hacia atrás discretiza las derivadas y produce un sistema no lineal en cada paso. Segundo, Newton--Raphson multivariable aproxima la solución por linealizaciones sucesivas. Tercero, Gauss--Seidel resuelve los sistemas lineales internos usando los valores recién actualizados de cada componente. Esta distinción entre \emph{integrador temporal}, \emph{solucionador no lineal} y \emph{solucionador lineal} atiende a la observación realizada por la profesora durante el avance 2. La convergencia de Gauss--Seidel no se supone automáticamente: se verifica mediante el radio espectral de su matriz de iteración y el residuo del sistema lineal.
+
+Se eligieron los métodos explícitos para medir convergencia, precisión y aparición de estados no admisibles cuando se incrementa el paso. RKF45 se utilizó además para observar cómo varía el paso durante el transitorio. Euler hacia atrás permite examinar el efecto de la discretización implícita, teniendo presente que su eficiencia también depende de la convergencia de Newton--Raphson y Gauss--Seidel. No se considera que un método implícito resulte necesariamente más preciso o barato para todo conjunto de parámetros.
+
+\paragraph{Criterios de validación.} Las derivadas de la función vectorial se calcularon analíticamente. En cada simulación se revisó la no negatividad con tolerancia $10^{-10}$, la conservación $|U+M+Z-1|$ y $|S+I+R-1|$ con tolerancia $10^{-8}$, y la admisibilidad del dominio $1-KI>0$. En Newton se exigió un residuo no lineal menor que $10^{-10}$; en Gauss--Seidel se supervisó también el residuo lineal, en vez de aceptar únicamente el tamaño de la actualización. Se fijaron 50 iteraciones máximas por solucionador interno en la implementación inicial. Los fallos de convergencia activaron rechazo y reducción del paso, por lo que los pasos nominales difieren de los utilizados efectivamente en algunos ensayos.
+
+\subsection{Formulación del sistema en la escala rápida}
+ 
+Para integrar ambas capas con una única variable independiente, las
+ecuaciones de la capa lenta se escriben en la escala rápida $t$ mediante
+$\tau=\varepsilon t$. Sea $\mathbf{x}=(U,M,Z,S,I,R)^{\top}\in\mathbb{R}^{6}$.
+El sistema acoplado define un problema de valor inicial
+$\dot{\mathbf{x}}=\mathbf{f}(\mathbf{x})$, $\mathbf{x}(0)=\mathbf{x}_0$, con
+$\mathbf{f}=(f_1,\dots,f_6)^{\top}$ dada por
+ 
+\begin{align}
+    f_1 &= \mu_1 - b_1UM - \bar{b}_2(I)\,UZ - \mu_1U, \\
+    f_2 &= b_1UM - \mu_1M, \\
+    f_3 &= \bar{b}_2(I)\,UZ - \mu_1Z, \\
+    f_4 &= \varepsilon\left[\mu_2 - \bar{\beta}(M,Z)\,SI + \eta R - \mu_2S\right], \\
+    f_5 &= \varepsilon\left[\bar{\beta}(M,Z)\,SI - (\gamma+\mu_2)I\right], \\
+    f_6 &= \varepsilon\left[\gamma I - (\eta+\mu_2)R\right].
+\end{align}
+ 
+En esta forma, los parámetros epidemiológicos ($\beta$, $\gamma$, $\eta$,
+$\mu_2$) se expresan en la escala lenta y la separación de escalas aparece
+únicamente a través del factor explícito $\varepsilon$ (Bulai et al., 2024).
+Las sumas poblacionales de cada capa satisfacen
+ 
+\begin{equation}
+\begin{aligned}
+    \frac{d}{dt}(U+M+Z)&=\mu_1\left[1-(U+M+Z)\right], \\
+    \frac{d}{dt}(S+I+R)&=\varepsilon\mu_2\left[1-(S+I+R)\right],
+\end{aligned}
+\end{equation}
+ 
+por lo que ambas permanecen iguales a uno cuando así lo están en $t=0$.
+Además, $f_i\geq 0$ siempre que $x_i=0$ y las demás componentes son no
+negativas, de modo que el octante no negativo es invariante bajo el flujo
+continuo (Bulai et al., 2024). La conservación poblacional y la
+positividad constituyen, por tanto, las propiedades que los esquemas
+discretos deben reproducir.
+ 
+\subsection{Matriz Jacobiana}
+ 
+Los esquemas implícitos, el solver no lineal y el análisis de rigidez
+requieren la matriz Jacobiana $\mathbf{J}_f=\partial\mathbf{f}/\partial\mathbf{x}$
+de orden $6\times 6$, que se organiza por bloques:
+ 
+\[
+    \mathbf{J}_f=
+    \begin{pmatrix}
+        \mathbf{J}_{ff} & \mathbf{J}_{fs} \\
+        \varepsilon\,\mathbf{J}_{sf} & \varepsilon\,\mathbf{J}_{ss}
+    \end{pmatrix},
+\]
+ 
+donde los subíndices $f$ y $s$ identifican las variables rápidas
+$(U,M,Z)$ y lentas $(S,I,R)$, respectivamente. Con
+$\bar{b}_2'(I)=Kb_2/(1-KI)^2$, $\partial_M\bar{\beta}=\beta/(1+Z)$ y
+$\partial_Z\bar{\beta}=-\beta(1+M)/(1+Z)^2$, los bloques resultan
+ 
+
+\begin{equation*}
+\adjustbox{max width=0.94\columnwidth}{$\displaystyle
+\mathbf{J}_{ff}=\begin{pmatrix}
+-(b_1M+\bar b_2Z+\mu_1)&-b_1U&-\bar b_2U\\
+b_1M&b_1U-\mu_1&0\\
+\bar b_2Z&0&\bar b_2U-\mu_1
+\end{pmatrix}$}
+\end{equation*}
+\begin{equation*}
+\adjustbox{max width=0.94\columnwidth}{$\displaystyle
+\mathbf{J}_{fs}=\begin{pmatrix}
+0&-\bar b_2'(I)UZ&0\\
+0&0&0\\
+0&\bar b_2'(I)UZ&0
+\end{pmatrix}$}
+\end{equation*}
+\begin{equation*}
+\adjustbox{max width=0.94\columnwidth}{$\displaystyle
+\mathbf{J}_{sf}=\begin{pmatrix}
+0&-SI\,\partial_M\bar\beta&-SI\,\partial_Z\bar\beta\\
+0&SI\,\partial_M\bar\beta&SI\,\partial_Z\bar\beta\\
+0&0&0
+\end{pmatrix}$}
+\end{equation*}
+\begin{equation*}
+\adjustbox{max width=0.94\columnwidth}{$\displaystyle
+\mathbf{J}_{ss}=\begin{pmatrix}
+-(\bar\beta I+\mu_2)&-\bar\beta S&\eta\\
+\bar\beta I&\bar\beta S-\gamma-\mu_2&0\\
+0&\gamma&-(\eta+\mu_2)
+\end{pmatrix}$}
+\end{equation*}
+
+Los bloques $\mathbf{J}_{fs}$ y $\mathbf{J}_{sf}$ contienen las únicas
+derivadas cruzadas y materializan el acoplamiento entre las capas.
+ 
+\subsection{Integración explícita}
+ 
+Los tres esquemas explícitos evalúan $\mathbf{f}$ únicamente en estados ya
+calculados. Con paso $h$, Euler explícito (orden 1) y Runge-Kutta de cuarto
+orden (RK4) se escriben
+ 
+\begin{equation}
+    \mathbf{x}^{n+1}=\mathbf{x}^{n}+h\,\mathbf{f}(\mathbf{x}^{n}),
+\end{equation}
+ 
+\begin{align}
+    \mathbf{k}_1 &= \mathbf{f}(\mathbf{x}^{n}), \\
+    \mathbf{k}_2 &= \mathbf{f}\!\left(\mathbf{x}^{n}+\tfrac{h}{2}\mathbf{k}_1\right), \\
+    \mathbf{k}_3 &= \mathbf{f}\!\left(\mathbf{x}^{n}+\tfrac{h}{2}\mathbf{k}_2\right), \\
+    \mathbf{k}_4 &= \mathbf{f}\!\left(\mathbf{x}^{n}+h\,\mathbf{k}_3\right), \\
+    \mathbf{x}^{n+1} &= \mathbf{x}^{n}+\tfrac{h}{6}\left(\mathbf{k}_1+2\mathbf{k}_2+2\mathbf{k}_3+\mathbf{k}_4\right).
+\end{align}
+ 
+RKF45 emplea un par encajado de órdenes 4 y 5 con seis evaluaciones de
+$\mathbf{f}$ por paso (Paul et al., 2016). La diferencia entre ambas
+aproximaciones estima el error local
+$e_n=\lVert\hat{\mathbf{x}}^{n+1}-\mathbf{x}^{n+1}\rVert_\infty$; el paso se
+acepta si $e_n\leq \mathrm{tol}$ y el siguiente paso se calcula como
+ 
+\begin{equation}
+\begin{aligned}
+    h_{\mathrm{nuevo}}=h\,\min\Bigl\{&2,\ \max\bigl\{0.2,\\
+    &0.9\,(\mathrm{tol}/e_n)^{1/5}\bigr\}\Bigr\}.
+\end{aligned}
+\end{equation}
+ 
+Los esquemas explícitos no garantizan positividad: si $h$ es demasiado
+grande, una componente cercana a cero puede cruzar a valores negativos. Estos
+casos se registran como violaciones y no se corrigen, pues constituyen la
+evidencia que se contrasta con el esquema implícito.
+ 
+\subsection{Integración implícita}
+ 
+Euler hacia atrás (orden 1) define el nuevo estado de forma implícita,
+ 
+\begin{equation}
+    \mathbf{x}^{n+1}=\mathbf{x}^{n}+h\,\mathbf{f}(\mathbf{x}^{n+1}),
+\end{equation}
+ 
+lo que equivale a hallar la raíz del sistema algebraico no lineal de seis
+ecuaciones
+ 
+\begin{equation}
+    \mathbf{G}(\mathbf{x}):=\mathbf{x}-\mathbf{x}^{n}-h\,\mathbf{f}(\mathbf{x})=\mathbf{0}.
+\end{equation}
+ 
+Este sistema se resuelve en cada paso con Newton-Raphson multivariable,
+partiendo de $\mathbf{x}^{(0)}=\mathbf{x}^{n}$:
+ 
+\begin{align}
+    \mathbf{W}\big(\mathbf{x}^{(k)}\big)\,\Delta\mathbf{x}^{(k)}&=-\mathbf{G}\big(\mathbf{x}^{(k)}\big), \\
+    \mathbf{x}^{(k+1)}&=\mathbf{x}^{(k)}+\Delta\mathbf{x}^{(k)},
+\end{align}
+ 
+con $\mathbf{W}(\mathbf{x})=\mathbf{I}_6-h\,\mathbf{J}_f(\mathbf{x})$. El sistema
+lineal de cada iteración se resuelve con Gauss-Seidel. Si
+$\mathbf{W}=\mathbf{D}+\mathbf{W}_{L}+\mathbf{W}_{U}$ separa la diagonal y las
+partes estrictamente triangular inferior y superior, y se escribe
+$\mathbf{W}\mathbf{y}=\mathbf{b}$ con $\mathbf{b}=-\mathbf{G}$, la iteración es
+
+\begin{equation}
+\begin{aligned}
+    y_i^{(m+1)}&=\frac{1}{w_{ii}}\Bigl(b_i-\sum_{j<i}w_{ij}\,y_j^{(m+1)}\\
+    &\qquad-\sum_{j>i}w_{ij}\,y_j^{(m)}\Bigr),\quad i=1,\dots,6,
+\end{aligned}
+\end{equation}
+
+
+ con matriz de iteración
+$\mathbf{T}_{GS}=-(\mathbf{D}+\mathbf{W}_{L})^{-1}\mathbf{W}_{U}$. La
+convergencia para cualquier aproximación inicial equivale a
+$\rho(\mathbf{T}_{GS})<1$, y la dominancia diagonal estricta por filas de
+$\mathbf{W}$ es una condición suficiente. Como $\mathbf{W}\to\mathbf{I}_6$ cuando
+$h\to 0$, existe un paso máximo por debajo del cual la convergencia está
+garantizada; ese límite se determina numéricamente evaluando
+$\rho(\mathbf{T}_{GS})$ en cada iteración de Newton. Dado que el sistema
+lineal se resuelve de forma iterativa, el esquema resultante es de tipo
+Newton inexacto, cuya convergencia local se preserva mientras el residuo
+lineal se mantenga acotado por una fracción del residuo no lineal
+(Dembo et al., 1982).
+ 
+Los dos invariantes de la sección anterior son lineales: la combinación
+$\mathbf{c}^{\top}\mathbf{f}$ es afín en $\mathbf{x}$ y se anula cuando
+$\mathbf{c}^{\top}\mathbf{x}=1$. Por ello, los esquemas de Runge-Kutta
+(explícitos o implícitos) y Euler hacia atrás conservan $U+M+Z=1$ y
+$S+I+R=1$ en aritmética exacta, y en la implementación el error de
+conservación queda acotado por la tolerancia del solver lineal interno. La
+positividad, en cambio, no se hereda automáticamente y se verifica en cada
+paso.
+ 
+\subsection{Rigidez y estabilidad}
+ 
+Como indicador local de separación de escalas se utiliza la razón
+\[
+    \mathrm{SR}=\frac{\max_i\lvert\mathrm{Re}\,\lambda_i\rvert}{\min_i\lvert\mathrm{Re}\,\lambda_i\rvert},
+    \qquad \mathrm{Re}\,\lambda_i\neq 0,
+\]
+donde $\lambda_i$ son los autovalores de $\mathbf{J}_f$ (Shampine y Gear,
+1979; da Silva et al., 2023). En el equilibrio libre de desinformación y de
+enfermedad, $\mathbf{E}_0=(1,0,0,1,0,0)$, la Jacobiana es diagonal por bloques
+y su espectro es
+ 
+\[
+\begin{aligned}
+\sigma\big(\mathbf{J}_f(\mathbf{E}_0)\big)=\{&-\mu_1,\; b_1-\mu_1,\; b_2-\mu_1,\\
+&-\varepsilon\mu_2,\; \varepsilon(\beta-\gamma-\mu_2),\; -\varepsilon(\eta+\mu_2)\}
+\end{aligned}
+\]
+ 
+Los tres primeros autovalores son $\mathcal{O}(1)$ y los tres últimos son
+$\mathcal{O}(\varepsilon)$, de modo que $\mathrm{SR}=\mathcal{O}(1/\varepsilon)$
+y la separación espectral aumenta al disminuir $\varepsilon$, sin que esta razón sola demuestre rigidez global.
+ 
+Para un autovalor real negativo $\lambda$, Euler explícito exige
+$h<2/\lvert\lambda\rvert$ y RK4 exige $h\lesssim 2.78/\lvert\lambda\rvert$.
+Con $\lvert\lambda\rvert=\mathcal{O}(1)$ y un horizonte
+$T=\mathcal{O}(1/\varepsilon)$ necesario para observar la dinámica lenta, el
+número de pasos explícitos crece como $\mathcal{O}(1/\varepsilon)$. Euler
+hacia atrás es A-estable (noción introducida por Dahlquist, 1963), por lo que
+su paso queda gobernado por la precisión en la escala lenta y no por la
+estabilidad. Cuando existen autovalores con parte real positiva
+$\lambda_{+}$ (modos inestables, por ejemplo $b_1>\mu_1$ en $\mathbf{E}_0$), el
+esquema puede producir soluciones espurias estables si $h\lambda_{+}>2$ y
+$\mathbf{W}$ se vuelve singular en $h\lambda_{+}=1$; por lo cual se monitoriza la rama numérica obtenida y se rechazan soluciones no admisibles.
+ 
+
+
+\subsection{Comprobación estructural y error numérico}
+Las ecuaciones ofrecen dos verificaciones previas a cualquier análisis de convergencia. Al sumar los tres compartimentos de la capa informativa y, por separado, los epidemiológicos, se obtiene una ecuación escalar lineal para cada suma $N_j$. Con $N_1(0)=N_2(0)=1$ se tiene $N_1(t)=N_2(t)=1$ en la solución exacta. Un algoritmo que arroje suma significativamente distinta de uno contradice, por lo tanto, una propiedad matemática básica del sistema. La positividad puede evaluarse comprobando que el campo vectorial no apunte fuera del ortante no negativo en sus fronteras. Estas propiedades del problema continuo no garantizan que todo método discreto las respete para pasos arbitrarios.
+
+En las implementaciones de paso fijo, el error de conservación registrado fue $\max_n\max\{|U_n+M_n+Z_n-1|,\,|S_n+I_n+R_n-1|\}$. Para los esquemas implícitos se examinaron, además, $\|\mathbf G(\mathbf x_{n+1})\|_\infty$ y $\|\mathbf W\Delta\mathbf x+\mathbf G\|_\infty$. Los residuos algebraicos son medidas de convergencia interna y no sustituyen al error temporal acumulado: un paso puede satisfacer Newton con alta precisión y, aun así, aproximar pobremente la solución diferencial cuando $h$ es grande.
+
+El índice de rigidez utilizado se calculó a partir de $\mathbf J_f(\mathbf x_0)$, excluyendo las partes reales nulas; por ello se denominó indicador espectral \emph{inicial}. Su variación identifica disparidad de tasas, pero no determina por sí sola los límites de estabilidad de una trayectoria no lineal. La aceptabilidad se evaluó conjuntamente con el error frente a referencia, la positividad, la conservación y el estado de los solucionadores internos.
+
+\subsection{Diseño computacional y medidas de desempeño}
+El conjunto exploratorio base fue $b_1=1.1$, $b_2=0.92$, $\mu_1=1$, $K=0.9$, $\beta=6$, $\gamma=1.2$, $\eta=0.7$, $\mu_2=1$ y $\varepsilon=10^{-2}$. Se consideraron dos condiciones iniciales normalizadas: $\mathbf{x}_0^{(a)}=(0.8,0.2,0,0.8,0.2,0)^\top$ y $\mathbf{x}_0^{(b)}=(0.7,0.2,0.1,0.8,0.2,0)^\top$. La segunda permitió estudiar una rama con escépticos inicialmente presentes, pues $Z(0)=0$ implica $Z(t)=0$ para el sistema continuo. Este conjunto es exploratorio del grupo: no se le atribuyó automáticamente al artículo original.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.07}
+\caption{Parámetros exploratorios empleados y valores propuestos para su variación.}
+\label{tab:parametros}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{llll}
+\toprule
+\textbf{Par.}&\textbf{Significado}&\textbf{Base}&\textbf{Variación propuesta}\\
+\midrule
+$b_1$ & Desinformación & $1.1$ & $\{0.5,1.1,2.0\}$\\
+$b_2$ & Escepticismo & $0.92$ & $\{0.5,0.92,2.0\}$\\
+$\mu_1$ & Pérdida de interés & $1$ & Fijo\\
+$K$ & Sensibilidad a $I$ & $0.9$ & $\{0,0.3,0.6,0.9\}$\\
+$\beta$ & Contagio base & $6$ & $\{2,4,6,8\}$\\
+$\gamma$ & Recuperación & $1.2$ & Fijo\\
+$\eta$ & Pérdida de inmunidad & $0.7$ & Fijo\\
+$\mu_2$ & Natalidad/mortalidad & $1$ & Fijo\\
+$\varepsilon$ & Separación de escalas & $10^{-2}$ & $\{10^{-1},10^{-2},10^{-3}\}$\\
+\bottomrule
+\end{tabular}}
+\end{table}
+La columna de variaciones reproduce el plan exploratorio del grupo; no
+implica que todos esos barridos paramétricos se hayan ejecutado en el
+avance 3. Los escenarios I y II de Bulai et al. (2024) utilizan un
+conjunto distinto, especificado más adelante.
+
+Para la comparación de convergencia se simuló hasta $T=100$ con $h=0.4,0.2,0.1,0.05$ para integradores de paso fijo. El orden observado se estimó mediante
+\begin{equation}
+ p_{\rm obs}=\log_2\left[\frac{e(h)}{e(h/2)}\right],\qquad
+ e(h)=\max_n\|\mathbf{x}_h(t_n)-\mathbf{x}_{\rm ref}(t_n)\|_\infty.
+\end{equation}
+Se empleó \texttt{ode45} con tolerancias estrictas para el contraste de precisión; RKF45 se comparó en sus propios nodos aceptados con una evaluación de referencia mediante \texttt{deval}, evitando interpolaciones externas que antes perturbaban la conservación poblacional. El error informado es diferencia frente a \emph{referencia numérica}, nunca error exacto. La eficiencia se describió con número de evaluaciones de $\mathbf{f}$, pasos, rechazos, iteraciones internas y tiempo medido en MATLAB. Las comparaciones temporales no son independientes del equipo.
+
+Para evaluar la separación temporal se mantuvo fijo $\tau_f=1$ y se varió $\varepsilon=10^{-1},10^{-2},10^{-3}$, de modo que $T=1/\varepsilon$. Se analizaron pasos nominales $h=0.5,1,2,4$ con \texttt{ode15s} como referencia. Los ensayos con trayectoria no finita, estado fuera del dominio o violaciones de conservación/positividad se etiquetaron como no admisibles. Este ensayo comparó Euler explícito, RK4 y Euler hacia atrás; el análisis detallado de rigidez con RKF45 queda pendiente.
+
+Para la aplicación epidemiológica se simularon los escenarios I y II del estudio de Bulai et al. (2024), con $\varepsilon=0.02$, $\mu_1=\mu_2=5.2143$, $\gamma=0.1667$, $\eta=0.1$, $K=0.9$, $I(0)=0.02$ y $\tau_f=30$. El escenario I utilizó $(b_1,b_2,\beta)=(6.7041,5.9041,4.8429)$; el II $(5.9041,6.7041,5.919)$. Se comparó un control sin difusión informativa con trayectorias de desinformación o escepticismo. RK4 con $h=0.1$ se contrastó con \texttt{ode15s}; los resultados son de horizonte finito y no demuestran convergencia asintótica.
+
+\begin{table}[t]
+\centering\footnotesize
+\caption{Función de los procedimientos numéricos implementados.}
+\label{tab:arquitectura}
+\begin{tabular}{p{1.45cm}p{1.0cm}p{3.65cm}}
+\toprule Método & Nivel & Función \\ \midrule
+Euler explícito & Tiempo & Comparación básica de orden uno \\
+RK4 & Tiempo & Integrador explícito de orden cuatro \\
+RKF45 & Tiempo & Paso adaptativo y control local \\
+Euler atrás & Tiempo & Integrador implícito de orden uno \\
+Newton & No lineal & Resolver la ecuación implícita \\
+Gauss--Seidel & Lineal & Resolver cada corrección de Newton \\
+\bottomrule
+\end{tabular}
+\end{table}

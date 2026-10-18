@@ -1,0 +1,68 @@
+\documentclass[final,5p,times,twocolumn,authoryear,11pt,nopreprintline]{elsarticle}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{graphicx}
+\usepackage{adjustbox}
+\usepackage{amsmath,amssymb}
+\usepackage{array,booktabs,tabularx}
+\usepackage{mathtools}
+\usepackage{microtype}
+\usepackage{dblfloatfix}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\urlstyle{same}
+\setlength{\parindent}{1.27cm}
+% Nombre del archivo .png y recuadro de reserva si no se ha exportado.
+\newcommand{\figpng}[1]{\IfFileExists{imagenes/#1}{\includegraphics[width=\columnwidth]{imagenes/#1}}{\fbox{\parbox[c][4.0cm][c]{.90\columnwidth}{\centering Figura pendiente:\\ \texttt{\detokenize{#1}}}}}}
+\newcommand{\fitcol}[1]{\resizebox{\columnwidth}{!}{#1}}
+% APA: número de tabla destacado, título en cursiva.
+\usepackage{caption}
+\captionsetup[table]{name=Tabla,labelfont=bf,textfont=it,labelformat=simple,labelsep=newline,justification=raggedright,singlelinecheck=false}
+\captionsetup[figure]{name=Figura,justification=raggedright,singlelinecheck=false}
+\newcommand{\tituloProyecto}{Simulación numérica de un modelo SIRS rápido--lento acoplado a difusión de información y desinformación}
+\begin{document}
+\begin{titlepage}
+\onecolumn
+\centering
+\vspace*{2cm}
+{\large Universidad de Ingeniería y Tecnología}\\[0.2cm]
+{\large Departamento Académico de Ciencias}\\[1.5cm]
+{\Large \bfseries \tituloProyecto}\\[2cm]
+\begin{minipage}{0.96\textwidth}
+\centering
+\large
+\textbf{Curso:} Métodos Numéricos (CC2104)\\[0.3cm]
+\textbf{Profesora:} Reynoso Quispe, Patricia\\[1cm]
+\textbf{Integrantes:}\\[0.3cm]
+{\small\begin{tabular}{@{}ll@{}}
+Timana Carmona, Jose Manuel & 202510502 \quad (jose.timana@utec.edu.pe) \\[0.15cm]
+Belevan Del Carpio, Santiago & 202310547 \quad (santiago.belevan@utec.edu.pe) \\[0.15cm]
+Torres Baldoceda, Matias John & 202510029 \quad (matias.torres@utec.edu.pe) \\[0.15cm]
+Davila Bazan, Santiago Sebastian & 202510442 \quad (santiago.davila@utec.edu.pe) \\[0.15cm]
+Feijoo Gonzales, Carlos Augusto & 201910028 \quad (carlos.feijoo@utec.edu.pe)
+\end{tabular}}
+\end{minipage}
+\vfill
+\textbf{Fecha de entrega:} 18/10/2026
+\vspace*{1cm}
+\end{titlepage}
+\twocolumn
+\begin{frontmatter}
+\title{\tituloProyecto}
+\author[utec]{Timana Carmona, Jose Manuel}
+\author[utec]{Belevan Del Carpio, Santiago}
+\author[utec]{Torres Baldoceda, Matias John}
+\author[utec]{Davila Bazan, Santiago Sebastian}
+\author[utec]{Feijoo Gonzales, Carlos Augusto}
+\address[utec]{Universidad de Ingeniería y Tecnología, Departamento Académico de Ciencias}
+\end{frontmatter}
+\input{01_introduccion}
+\input{02_metodologia}
+\input{03_resultados}
+\input{04_discusion}
+\clearpage
+\section*{Anexos y código}
+Los archivos de implementación en MATLAB (\texttt{.m} y \texttt{.mlx}), las figuras y las tablas de resultados se encuentran organizados en el repositorio del proyecto: \url{https://github.com/jmtimana/CC2104-UMZ-SIRS-Grupo8}. La reproducibilidad de los experimentos puede verificarse a partir de los scripts y los parámetros descritos en la Metodología.
+\input{05_referencias}
+\end{document}
