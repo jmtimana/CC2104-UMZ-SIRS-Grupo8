@@ -11,6 +11,11 @@
 clear; clc; close all; format long g
 
 carpetaFiguras='../figuras'; carpetaRes='../resultados';
+
+% LETRA LEGIBLE AL ANCHO DE COLUMNA DEL PAPER
+
+set(groot,'defaultAxesFontSize',14,'defaultLegendFontSize',12,'defaultTextFontSize',14);
+
 if ~exist(carpetaFiguras,'dir'), mkdir(carpetaFiguras); end
 if ~exist(carpetaRes,'dir'), mkdir(carpetaRes); end
 
@@ -86,18 +91,18 @@ for c=1:numel(casos)
     %% Figura 2x2: (a) I con/sin informacion, (b) diferencia, (c) 6 variables con
     % informacion, (d) 6 variables del control. Paneles (c) y (d) en tau logaritmico
     % para que la capa rapida (tau pequeno) y la lenta se vean a la vez.
-    fig=figure('Color','w','Name',casos(c).nombre,'Position',[40 40 1250 800]);
+    fig=figure('Color','w','Name',casos(c).nombre,'Position',[40 40 1250 680]);
     nom={'U','M','Z','S','I','R'}; col=lines(6);
     subplot(2,2,1)
     plot(q.eps*tC,XC(5,:),'--','LineWidth',1.5); hold on
     plot(q.eps*tA,XA(5,:),'LineWidth',1.5); grid on
     xlabel('Tiempo lento \tau'); ylabel('Fracción infectada I')
-    title('(a) Infección con y sin difusión informativa')
+    title('(a) I con y sin información')
     legend('Control (sin información)','Con información','Location','best')
     subplot(2,2,2)
     plot(q.eps*tA,XA(5,:)-XC(5,:),'LineWidth',1.5); yline(0,'--'); grid on
     xlabel('Tiempo lento \tau'); ylabel('I_{info} - I_{control}')
-    title('(b) Efecto del acoplamiento informativo')
+    title('(b) Efecto de la información')
     subplot(2,2,3); hold on
     for k=1:6
         if k<=3, est='--'; else, est='-'; end
@@ -105,7 +110,7 @@ for c=1:numel(casos)
     end
     set(gca,'XScale','log'); grid on; xlim([1e-3 tauFinal]); ylim([-0.02 1.02]);
     xlabel('Tiempo lento \tau (escala log.)'); ylabel('Proporción')
-    title(['(c) Con información: ' casos(c).tag])
+    title('(c) Con información')
     legend(nom,'NumColumns',3,'Location','best')
     subplot(2,2,4); hold on
     for k=1:6
@@ -114,12 +119,12 @@ for c=1:numel(casos)
     end
     set(gca,'XScale','log'); grid on; xlim([1e-3 tauFinal]); ylim([-0.02 1.02]);
     xlabel('Tiempo lento \tau (escala log.)'); ylabel('Proporción')
-    title('(d) Control: sin difusión informativa (U=1, M=Z=0)')
+    title('(d) Control (U=1, M=Z=0)')
     legend(nom,'NumColumns',3,'Location','best')
     sgtitle({sprintf('%s: (b_1,b_2,\\beta)=(%g, %g, %g), \\epsilon=%g', ...
         casos(c).nombre,q.b1,q.b2,q.beta,q.eps), ...
         sprintf('(U,M,Z)_0=(%g, %g, %g); líneas discontinuas: capa informativa', ...
-        casos(c).informacion(1),casos(c).informacion(2),casos(c).informacion(3))},'FontSize',12);
+        casos(c).informacion(1),casos(c).informacion(2),casos(c).informacion(3))},'FontSize',14);
     if c==1, archivoFigura='fig03_escenario_desinformacion.png';
     else, archivoFigura='fig04_escenario_escepticismo.png'; end
     exportgraphics(fig,fullfile(carpetaFiguras,archivoFigura),'Resolution',300);

@@ -13,6 +13,11 @@
 clear; clc; close all; format short g
 
 carpetaFiguras='../figuras'; carpetaRes='../resultados';
+
+% LETRA LEGIBLE AL ANCHO DE COLUMNA DEL PAPER
+
+set(groot,'defaultAxesFontSize',13,'defaultLegendFontSize',11,'defaultTextFontSize',13);
+
 if ~exist(carpetaFiguras,'dir'), mkdir(carpetaFiguras); end
 if ~exist(carpetaRes,'dir'), mkdir(carpetaRes); end
 
@@ -88,7 +93,7 @@ fprintf('\nGuardado: MN_Grupo8_resultados_costo_epsilon.csv\n');
 
 %% 3. Figura: costo minimo (evaluaciones de f) que alcanza el error objetivo
 metodos={'RK4','Euler atras','ode45','ode15s'};
-etiq={'RK4','Euler atrás (directo)','ode45','ode15s'};
+etiq={'RK4','Euler atrás (directo)','DP45','NDF'};
 col=lines(4); mk={'o-','s-','^-','d-'};
 fig=figure('Color','w','Name','Costo vs epsilon','Position',[50 50 1200 480]);
 for ic=1:2

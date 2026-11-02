@@ -10,6 +10,11 @@
 clear; clc; close all; format long g
 
 carpetaFiguras='../figuras'; carpetaRes='../resultados';
+
+% LETRA LEGIBLE AL ANCHO DE COLUMNA DEL PAPER
+
+set(groot,'defaultAxesFontSize',14,'defaultLegendFontSize',12,'defaultTextFontSize',14);
+
 if ~exist(carpetaFiguras,'dir'), mkdir(carpetaFiguras); end
 if ~exist(carpetaRes,'dir'), mkdir(carpetaRes); end
 
@@ -92,7 +97,7 @@ for caso=1:2
 
     if caso==2
         %% Figura 01: convergencia (paso fijo) con pendientes de referencia
-        fig1=figure('Color','w','Name','Figura 01 - Convergencia');
+        fig1=figure('Color','w','Name','Figura 01 - Convergencia','Position',[60 60 960 510]);
         hold on;
         estilos={'o-','s--','^-.'}; colores=lines(3); hl=gobjects(1,3);
         for im=1:3

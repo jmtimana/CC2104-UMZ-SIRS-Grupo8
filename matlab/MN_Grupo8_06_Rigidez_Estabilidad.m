@@ -16,6 +16,11 @@
 clear; clc; close all; format short g
 
 carpetaFiguras='../figuras'; carpetaRes='../resultados';
+
+% LETRA LEGIBLE AL ANCHO DE COLUMNA DEL PAPER
+
+set(groot,'defaultAxesFontSize',13,'defaultLegendFontSize',11,'defaultTextFontSize',13);
+
 if ~exist(carpetaFiguras,'dir'), mkdir(carpetaFiguras); end
 if ~exist(carpetaRes,'dir'), mkdir(carpetaRes); end
 
@@ -150,11 +155,11 @@ for ie=1:numel(epsilons)
         xlim([0.4 5]);
         xticks(pasos); xticklabels(string(pasos)); set(ax,'XMinorTick','off');
         xlabel('Paso nominal h');
-        if ie==1, ylabel('Error máximo frente a ode15s'); end
+        if ie==1, ylabel('Error frente a la referencia (NDF)'); end
         title(sprintf('\\epsilon=%g, %s',epsilons(ie),tit));
         if ie==3
-            if fila==1, legend([hl hx],[et {'inadmisible / fallo'}],'Location','southeast','FontSize',7);
-            else, legend([hl hx],[et {'inadmisible / fallo'}],'Location','north','NumColumns',3,'FontSize',7); end
+            if fila==1, legend([hl hx],[et {'inadmisible / fallo'}],'Location','southeast','FontSize',9);
+            else, legend([hl hx],[et {'inadmisible / fallo'}],'Location','north','NumColumns',3,'FontSize',9); end
         end
     end
 end
@@ -179,7 +184,7 @@ legend([hl9 hn],[et9 {'h nominal = 4'}],'Location','best','FontSize',8);
 % exportgraphics(fig9,fullfile(carpetaFiguras,'fig09_paso_efectivo.png'),'Resolution',300);
 
 % Figura 08: radio espectral de Gauss-Seidel frente a h
-fig8=figure('Color','w','Name','rho GS vs h');
+fig8=figure('Color','w','Name','rho GS vs h','Position',[60 60 960 510]);
 semilogx(tablaR.h,tablaR.Rho_x0,'-o','LineWidth',1.4); hold on;
 semilogx(tablaR.h,tablaR.Rho_x50,'-s','LineWidth',1.4);
 yline(1,'--k','\rho=1'); grid on;
