@@ -2,7 +2,7 @@
 Los resultados se organizaron por objetivo específico. Los objetivos 1 y 2 concernieron a la estabilidad numérica y los objetivos 3 y 4 al comportamiento epidemiológico; la síntesis final los distinguió.
 
 \subsection{Objetivo 1: formulación, implementación y validación}
-\paragraph{Validación de las referencias.} Al estrechar \texttt{ode15s} de $r_{\rm tol}=10^{-8}$ a $10^{-11}$, la diferencia con la solución siguiente descendió de $5.3$--$6.9\cdot10^{-9}$ a $1.5$--$4.8\cdot10^{-11}$ en los cuatro casos, y la diferencia con la más estricta fue como máximo $8.9\cdot10^{-9}$ con $r_{\rm tol}=10^{-8}$. Los integradores independientes (\texttt{ode45}, \texttt{ode113}, $r_{\rm tol}=10^{-12}$) difirieron de la referencia estricta en menos de $1.3\cdot10^{-11}$. La conservación de las referencias fue de $5.3\cdot10^{-11}$ como máximo y la menor componente fue $-3.5\cdot10^{-11}$, dentro de la tolerancia de positividad de $10^{-10}$. En los escenarios I y II, las ramas analíticas $M$ y $Z$ fueron coherentes; las diferencias de $U$, $M$ y $Z$ con la referencia numérica no superaron $1.1\cdot10^{-9}$ y las de $I$ fueron de $2.8\cdot10^{-8}$ (escenario I) y $1.5\cdot10^{-9}$ (escenario II) en $\tau=30$. Por ello, los errores inferiores a $\sim10^{-11}$ se interpretaron con cautela.
+\paragraph{Validación de las referencias} Al estrechar NDF de $r_{\rm tol}=10^{-8}$ a $10^{-11}$, la diferencia con la solución siguiente descendió de $5.3$--$6.9\cdot10^{-9}$ a $1.5$--$4.8\cdot10^{-11}$ en los cuatro casos, y la diferencia con la más estricta fue como máximo $8.9\cdot10^{-9}$ con $r_{\rm tol}=10^{-8}$. Los integradores independientes (DP45, ABM, $r_{\rm tol}=10^{-12}$) difirieron de la referencia estricta en menos de $1.3\cdot10^{-11}$. La conservación de las referencias fue de $5.3\cdot10^{-11}$ como máximo y la menor componente fue $-3.5\cdot10^{-11}$, dentro de la tolerancia de positividad de $10^{-10}$. En los escenarios I y II, las ramas analíticas $M$ y $Z$ fueron coherentes; las diferencias de $U$, $M$ y $Z$ con la referencia numérica no superaron $1.1\cdot10^{-9}$ y las de $I$ fueron de $2.8\cdot10^{-8}$ (escenario I) y $1.5\cdot10^{-9}$ (escenario II) en $\tau=30$. Por ello, los errores inferiores a $\sim10^{-11}$ se interpretaron con cautela.
 
 \begin{figure}[!htb]
 \centering
@@ -27,7 +27,7 @@ RKF45 & -- & 117 & 702 & 0 & 0 \\
 \par{\scriptsize\textit{Nota.} $p_{\rm obs}$: de $h=0.2$ a $0.1$; Jac.: jacobianas; Barr. GS: barridos de Gauss--Seidel.\par}
 \end{table}
 
-\paragraph{Orden y precisión.} Con la condición alternativa y $h\in[0.025,0.8]$, todas las simulaciones de paso fijo terminaron sin componentes negativas; el error de conservación fue $\le2.0\cdot10^{-15}$ en los métodos explícitos y $\le3.3\cdot10^{-10}$ en Euler hacia atrás. La Figura~\ref{fig:conv} mostró pendientes $\mathcal O(h)$ para ambos Euler y $\mathcal O(h^4)$ para RK4; el orden observado entre $h=0.2$ y $h=0.1$ se dio en la Tabla~\ref{tab:orden}. Los errores de RK4 con $h=0.05$ y $h=0.025$ ($4.6\cdot10^{-11}$ y $2.9\cdot10^{-12}$) quedaron en o por debajo de la incertidumbre de la referencia.
+\paragraph{Orden y precisión} Con la condición alternativa y $h\in[0.025,0.8]$, todas las simulaciones de paso fijo terminaron sin componentes negativas; el error de conservación fue $\le2.0\cdot10^{-15}$ en los métodos explícitos y $\le3.3\cdot10^{-10}$ en Euler hacia atrás. La Figura~\ref{fig:conv} mostró pendientes $\mathcal O(h)$ para ambos Euler y $\mathcal O(h^4)$ para RK4; el orden observado entre $h=0.2$ y $h=0.1$ se dio en la Tabla~\ref{tab:orden}. Los errores de RK4 con $h=0.05$ y $h=0.025$ ($4.6\cdot10^{-11}$ y $2.9\cdot10^{-12}$) quedaron en o por debajo de la incertidumbre de la referencia.
 
 
 
@@ -38,14 +38,14 @@ RKF45 & -- & 117 & 702 & 0 & 0 \\
 \label{fig:trabajo}
 \end{figure*}
 
-\paragraph{Trabajo y precisión.} En RKF45 el error global fue aproximadamente $0.12\,r_{\rm tol}$ para $r_{\rm tol}\le10^{-6}$ (de $1.2\cdot10^{-7}$ a $1.2\cdot10^{-11}$), con 61 a 275 pasos aceptados y un solo rechazo (con $r_{\rm tol}=10^{-10}$). La Figura~\ref{fig:trabajo} mostró que, para errores de $10^{-9}$ a $10^{-11}$, RKF45 necesitó unas cinco veces menos evaluaciones que RK4 (702 frente a 4000 para $\sim10^{-9}$ y 1656 frente a 8000 para $\sim10^{-11}$), mientras que los métodos de Euler no bajaron de $3\cdot10^{-4}$ en el rango explorado. En tiempo (mediana de cinco corridas), RKF45 tomó $2.5\cdot10^{-3}$\,s y RK4 $1.8\cdot10^{-2}$\,s para $\sim10^{-9}$, y Euler hacia atrás $0.21$\,s para $1.2\cdot10^{-3}$.
+\paragraph{Trabajo y precisión} En RKF45 el error global fue aproximadamente $0.12\,r_{\rm tol}$ para $r_{\rm tol}\le10^{-6}$ (de $1.2\cdot10^{-7}$ a $1.2\cdot10^{-11}$), con 61 a 275 pasos aceptados y un solo rechazo (con $r_{\rm tol}=10^{-10}$). La Figura~\ref{fig:trabajo} mostró que, para errores de $10^{-9}$ a $10^{-11}$, RKF45 necesitó unas cinco veces menos evaluaciones que RK4 (702 frente a 4000 para $\sim10^{-9}$ y 1656 frente a 8000 para $\sim10^{-11}$), mientras que los métodos de Euler no bajaron de $3\cdot10^{-4}$ en el rango explorado. En tiempo (mediana de cinco corridas), RKF45 tomó $2.5\cdot10^{-3}$\,s y RK4 $1.8\cdot10^{-2}$\,s para $\sim10^{-9}$, y Euler hacia atrás $0.21$\,s para $1.2\cdot10^{-3}$.
 
 
 \subsection{Objetivo 2: métodos explícitos e implícitos frente a la rigidez}
 \begin{figure*}[!t]
 \centering
 \includegraphics[width=0.68\textwidth]{imagenes/fig02_rigidez_estabilidad.png}
-\caption{Error máximo frente a \texttt{ode15s} según el paso nominal $h$ para $\varepsilon=0.1$, $0.01$ y $0.001$ (columnas); fila superior, sin reducción de paso; inferior, con reducción. Las cruces indican casos inadmisibles o fallidos; Euler hacia atrás con Gauss--Seidel y con solución directa coinciden cuando ambos terminan.}
+\caption{Error máximo frente a NDF según el paso nominal $h$ para $\varepsilon=0.1$, $0.01$ y $0.001$ (columnas); fila superior, sin reducción de paso; inferior, con reducción. Las cruces indican casos inadmisibles o fallidos; Euler hacia atrás con Gauss--Seidel y con solución directa coinciden cuando ambos terminan.}
 \label{fig:rigidez}
 \end{figure*}
 
@@ -108,7 +108,7 @@ Con reducción de paso y $h=4$, todos los métodos terminaron (Tabla~\ref{tab:re
 \label{fig:costo}
 \end{figure*}
 
-El costo para alcanzar un error $\le10^{-3}$ (Figura~\ref{fig:costo}) creció casi proporcionalmente a $1/\varepsilon$ en RK4 (de 20 a $2\cdot10^6$ evaluaciones en el conjunto base) y en \texttt{ode45} (de 73 a $1.9\cdot10^6$), y se mantuvo casi plano en \texttt{ode15s} (de 44 a 227 en el conjunto base y de 53 a 79 en el de Bulai). En el conjunto de Bulai, \texttt{ode45} requirió $5.0\cdot10^{7}$ evaluaciones con $\varepsilon=10^{-6}$ frente a 79 de \texttt{ode15s}, y Euler hacia atrás con solución directa requirió $3.0\cdot10^{5}$, también proporcional a $1/\varepsilon$ para $\varepsilon\le10^{-3}$. En el conjunto base, Euler hacia atrás no alcanzó el error objetivo con los pasos ensayados, y RK4 no se evaluó con $\varepsilon\le10^{-5}$ en el de Bulai por exceder el límite de pasos.
+El costo para alcanzar un error $\le10^{-3}$ (Figura~\ref{fig:costo}) creció casi proporcionalmente a $1/\varepsilon$ en RK4 (de 20 a $2\cdot10^6$ evaluaciones en el conjunto base) y en DP45 (de 73 a $1.9\cdot10^6$), y se mantuvo casi plano en NDF (de 44 a 227 en el conjunto base y de 53 a 79 en el de Bulai). En el conjunto de Bulai, DP45 requirió $5.0\cdot10^{7}$ evaluaciones con $\varepsilon=10^{-6}$ frente a 79 de NDF, y Euler hacia atrás con solución directa requirió $3.0\cdot10^{5}$, también proporcional a $1/\varepsilon$ para $\varepsilon\le10^{-3}$; su mínimo en $\varepsilon=10^{-3}$ se debió a que con $h=50$ el error fue $2.9\cdot10^{-4}$, mientras que en $\varepsilon=10^{-2}$ fue $1.02\cdot10^{-3}$ y solo cumplió $h=0.1$. En el conjunto base, Euler hacia atrás no alcanzó el error objetivo con los pasos ensayados, y RK4 no se evaluó con $\varepsilon\le10^{-5}$ en el de Bulai por exceder el límite de pasos.
 
 
 \subsection{Objetivo 3: variación de parámetros}
@@ -159,7 +159,7 @@ I & 0.900 & 1.100 & 0.806 & 0 & 0.08814 & $2.8\cdot10^{-8}$ \\
 II & 1.100 & 1.228 & 0.900 & 0.08813 & 0 & $5.5\cdot10^{-8}$ \\
 \bottomrule
 \end{tabular}
-\par{\scriptsize\textit{Nota.} ctl: control sin información; acopl: con información; error frente a \texttt{ode15s}.\par}
+\par{\scriptsize\textit{Nota.} ctl: control sin información; acopl: con información; error frente a NDF.\par}
 \end{table}
 
 \begin{figure*}[!t]
@@ -174,7 +174,7 @@ II & 1.100 & 1.228 & 0.900 & 0.08813 & 0 & $5.5\cdot10^{-8}$ \\
 \label{fig:escen}
 \end{figure*}
 
-En los escenarios de Bulai et al. (2024) (Tabla~\ref{tab:escenarios}), el escenario I tuvo $R_{00}=0.9<1$, de modo que el control se extinguió ($I=1.6\cdot10^{-9}$ en $\tau=30$), pero con desinformación $R_{01}=1.1>1$ y $I$ terminó en $0.08814$ (Figura~\ref{fig:escen}, izquierda). En el escenario II el control fue endémico ($0.08813$, $R_{00}=1.1$) y con escepticismo $R_{02}=0.9<1$ y $I$ terminó en $1.5\cdot10^{-9}$ (Figura~\ref{fig:escen}, derecha). RK4 ($h=0.1$) coincidió con \texttt{ode15s} con errores de $2.8\cdot10^{-8}$ y $5.5\cdot10^{-8}$, y los errores de conservación fueron $\le8.9\cdot10^{-16}$. La diferencia entre la referencia estricta y la laxa fue de $1.7\cdot10^{-10}$ y $2.1\cdot10^{-10}$.
+En los escenarios de Bulai et al. (2024) (Tabla~\ref{tab:escenarios}), el escenario I tuvo $R_{00}=0.9<1$, de modo que el control se extinguió ($I=1.6\cdot10^{-9}$ en $\tau=30$), pero con desinformación $R_{01}=1.1>1$ y $I$ terminó en $0.08814$ (Figura~\ref{fig:escen}, izquierda). En el escenario II el control fue endémico ($0.08813$, $R_{00}=1.1$) y con escepticismo $R_{02}=0.9<1$ y $I$ terminó en $1.5\cdot10^{-9}$ (Figura~\ref{fig:escen}, derecha). RK4 ($h=0.1$) coincidió con NDF con errores de $2.8\cdot10^{-8}$ y $5.5\cdot10^{-8}$, y los errores de conservación fueron $\le8.9\cdot10^{-16}$. La diferencia entre la referencia estricta y la laxa fue de $1.7\cdot10^{-10}$ y $2.1\cdot10^{-10}$.
 
 
 
