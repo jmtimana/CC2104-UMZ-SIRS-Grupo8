@@ -1,0 +1,13 @@
+Epsilon,Metodo,Solver,hMaxEstable,LambdaMaxFinal,LambdaMaxTrayectoria,LimiteTeorico
+0.1,Euler explicito,-,2.03491295878063,0.999999999999999,1,2
+0.1,RK4,-,2.81739821328998,0.999999999999999,1,2.78
+0.1,Euler atras,GS,2.11176577464704,0.999999999999999,1,NaN
+0.1,Euler atras,directo,12.8656193577564,0.999999999999999,1,NaN
+0.01,Euler explicito,-,2.03491295878063,1,1,2
+0.01,RK4,-,2.81850954868356,1,1,2.78
+0.01,Euler atras,GS,2.99853957376801,1,1,NaN
+0.01,Euler atras,directo,64,1,1,NaN
+0.001,Euler explicito,-,2.03571563934714,1,1,2
+0.001,RK4,-,2.81628731609479,1,1,2.78
+0.001,Euler atras,GS,3.26001965982264,1,1,NaN
+0.001,Euler atras,directo,64,1,1,NaN
