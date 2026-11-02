@@ -1,102 +1,340 @@
-%% GRUPO 8 - Comparacion cuantitativa de integradores UMZ-SIRS (CORREGIDO)
-% MATLAB R2019b+ | Guardar como Live Script (.mlx) desde Live Editor.
-% Solucion de referencia: ode45 con tolerancias estrictas (NO exacta).
-% Se miden errores de trayectoria en nodos comunes y tiempo de ejecucion.
+%% GRUPO 8 - Comparacion cuantitativa de integradores UMZ-SIRS (ENTREGA FINAL)
+% MATLAB R2019b+ | Ejecutar Run con matlab/ como directorio de trabajo.
+% Solucion de referencia: ode45 con tolerancias estrictas (NO exacta; se valida
+% en el archivo 09). Pasos fijos: Euler explicito, RK4, Euler atras (canonico,
+% sin reduccion de paso). RKF45: se barre la TOLERANCIA (no el paso inicial).
+% Salidas: ../resultados/MN_Grupo8_resultados_caso_1.csv y _caso_2.csv
+%          ../figuras/fig01_convergencia_alternativa.png
+%          ../figuras/fig10_trabajo_precision.png
+% Nota: guardar en UTF-8 (los textos de las figuras llevan tildes).
 clear; clc; close all; format long g
 
-%% Exportacion automatica para el paper
-carpetaFiguras = 'figuras';
+carpetaFiguras='../figuras'; carpetaRes='../resultados';
 if ~exist(carpetaFiguras,'dir'), mkdir(carpetaFiguras); end
+if ~exist(carpetaRes,'dir'), mkdir(carpetaRes); end
 
 %% 1. Parametros y controles
 p.b1=1.1; p.b2=0.92; p.mu1=1; p.K=0.9;
 p.beta=6; p.gamma=1.2; p.eta=0.7; p.mu2=1; p.eps=1e-2;
 T=100;
-hs=[0.4 0.2 0.1 0.05]; % dividen exactamente T
+hs=[0.8 0.4 0.2 0.1 0.05 0.025];      % todos dividen exactamente T
+rtols=10.^(-4:-1:-10);                % barrido de tolerancias de RKF45
 condiciones={[0.8;0.2;0;0.8;0.2;0],[0.7;0.2;0.1;0.8;0.2;0]};
 nombres={'Original Z0=0','Alternativa Z0=0.1'};
-metodos={'Euler explicito','RK4','RKF45','Euler atras'};
+metodosFijos={'Euler explicito','RK4','Euler atras'};
 optRef=odeset('RelTol',1e-12,'AbsTol',1e-13,'MaxStep',0.01);
-optRK.rtol=1e-8; optRK.atol=1e-10; optRK.hmax=2; optRK.hmin=1e-10;
-optImp.tolG=1e-10; optImp.tolGS=1e-11;
-optImp.maxNewton=50; optImp.maxGS=50;
+
+opt.tolResidual=1e-10; opt.tolGS=1e-6; opt.tolLin=1e-11;
+opt.maxNewton=50; opt.maxGS=50; opt.tolPos=1e-10; opt.tolCons=1e-8;
+opt.minH=1e-8; opt.maxRechazos=50;
+opt.reducir=false;                    % paso fijo: si falla, se registra FALLO
+opt.solver='gs';
+opt.hmin=1e-10; opt.maxIntentos=200000;
+h0RKF=0.1; hmaxRKF=2;
+nRep=5;                               % repeticiones para medir tiempo (se usa la mediana)
 
 %% 2. Comparacion en cada condicion inicial
 for caso=1:2
     x0=condiciones{caso};
     fprintf('\n================ %s ================\n',nombres{caso});
-    tic;
-    solRef=ode45(@(t,x)modelo(x,p),[0 T],x0,optRef);
-    tref=solRef.x;
-    fprintf('Referencia ode45: %.3f s, %d nodos internos\n',toc,numel(tref));
-    % Los metodos de paso fijo se comparan en sus nodos; RKF45 en los propios.
-    resultados={};
-    for ih=1:numel(hs)
-        h=hs(ih); N=round(T/h); t=(0:N)*h;
-        % deval usa la interpolacion continua interna de ode45.
-        Yref=deval(solRef,t);
-        for im=1:4
-            nombre=metodos{im};
-            try
+    reloj=tic; solRef=ode45(@(t,x)modelo(x,p),[0 T],x0,optRef);
+    fprintf('Referencia ode45: %.3f s, %d nodos internos\n',toc(reloj),numel(solRef.x));
+    filas={};
+    % --- Integradores de paso fijo
+    for im=1:3
+        errPrev=NaN;
+        for ih=1:numel(hs)
+            h=hs(ih);
+            segs=zeros(1,nRep);
+            for rep=1:nRep+1                  % la 1.a corrida es de calentamiento y se descarta
                 reloj=tic;
-                if im==1
-                    [X,feval]=expl_fijo(x0,p,h,N,1); nSteps=N; nRej=0; itN=0; itGS=0;
-                elseif im==2
-                    [X,feval]=expl_fijo(x0,p,h,N,4); nSteps=N; nRej=0; itN=0; itGS=0;
-                elseif im==3
-                    [ta,Xa,feval,nRej]=rkf45(x0,p,T,h,optRK);
-                    X=Xa; % Para RKF45 evaluar en sus PROPIOS nodos, sin pchip externo.
-                    Ycomparar=deval(solRef,ta);
-                    nSteps=numel(ta)-1; itN=0; itGS=0;
-                else
-                    [X,feval,itN,itGS]=impl_fijo(x0,p,h,N,optImp);
-                    nSteps=N; nRej=0;
+                switch im
+                    case 1, [t,X,info]=explicito(x0,p,T,h,1,opt);
+                    case 2, [t,X,info]=explicito(x0,p,T,h,4,opt);
+                    case 3, [t,X,info]=euler_atras(x0,p,T,h,opt);
                 end
-                segundos=toc(reloj);
-                if im~=3, Ycomparar=Yref; end
-                err=max(abs(X-Ycomparar),[],'all');
-                conserv=max([max(abs(sum(X(1:3,:),1)-1)),max(abs(sum(X(4:6,:),1)-1))]);
-                minimo=min(X,[],'all');
-                resultados(end+1,:)={h,nombre,err,conserv,minimo,nSteps,nRej,feval,itN,itGS,segundos,'OK'}; %#ok<AGROW>
-            catch ME
-                resultados(end+1,:)={h,nombre,NaN,NaN,NaN,0,0,0,0,0,NaN,['FALLO: ' ME.message]}; %#ok<AGROW>
+                if rep>1, segs(rep-1)=toc(reloj); end
             end
+            seg=median(segs); info=completar(info);
+            [err,cons,mn]=metricas(t,X,solRef,T,info);
+            orden=NaN;
+            if ih>1 && isfinite(err) && isfinite(errPrev) && err>0
+                orden=log(errPrev/err)/log(hs(ih-1)/h);   % orden observado
+            end
+            errPrev=err;
+            filas(end+1,:)={caso,metodosFijos{im},h,NaN,err,orden,cons,mn, ...
+                info.aceptados,info.rechazados,info.evalf,info.jac,info.newton, ...
+                info.gs,seg,info.estado}; %#ok<AGROW>
         end
     end
-    tabla=cell2table(resultados,'VariableNames', ...
-        {'h','Metodo','ErrorMaxRef','ErrorConservacion','Minimo','Pasos','Rechazados','EvalF','IterNewton','IterGS','Segundos','Estado'});
+    % --- RKF45: barrido de tolerancia
+    for k=1:numel(rtols)
+        rt=rtols(k);
+        segs=zeros(1,nRep);
+        for rep=1:nRep+1                      % la 1.a corrida es de calentamiento y se descarta
+            reloj=tic;
+            [t,X,info]=rkf45(x0,p,T,h0RKF,hmaxRKF,rt,1e-2*rt,opt);
+            if rep>1, segs(rep-1)=toc(reloj); end
+        end
+        seg=median(segs); info=completar(info);
+        [err,cons,mn]=metricas(t,X,solRef,T,info);
+        filas(end+1,:)={caso,'RKF45',NaN,rt,err,NaN,cons,mn,info.aceptados, ...
+            info.rechazados,info.evalf,0,0,0,seg,info.estado}; %#ok<AGROW>
+    end
+    tabla=cell2table(filas,'VariableNames', ...
+        {'Caso','Metodo','h','RelTol','ErrorMaxRef','OrdenObs','ErrorConservacion', ...
+         'Minimo','Pasos','Rechazados','EvalF','Jacobianas','IterNewton','IterGS', ...
+         'Segundos','Estado'});
     disp(tabla);
     nombreCSV=sprintf('MN_Grupo8_resultados_caso_%d.csv',caso);
-    writetable(tabla,nombreCSV);
+    writetable(tabla,fullfile(carpetaRes,nombreCSV));
     fprintf('Tabla guardada: %s\n',nombreCSV);
 
-    figure('Color','w','Name',['Comparacion - ' nombres{caso}]);
-    hold on;
-    for im=1:4
-        filas=strcmp(tabla.Metodo,metodos{im}) & strcmp(tabla.Estado,'OK');
-        if im==3, continue; end % RKF45 adapta h: variar h0 no es estudio de orden.
-        if any(filas)
-            loglog(tabla.h(filas),max(tabla.ErrorMaxRef(filas),eps),'o-','LineWidth',1.4,'DisplayName',metodos{im});
-        end
-    end
-    grid on; xlabel('Paso inicial o fijo h'); ylabel('Error maximo vs referencia');
-    title(['Convergencia (paso fijo): ' nombres{caso}]); legend('Location','best');
-    set(gca,'XScale','log','YScale','log');
-    % Figura 01: caso alternativo, con escala logaritmica para distinguir RK4.
     if caso==2
-        exportgraphics(gcf,fullfile(carpetaFiguras, ...
-            'fig01_convergencia_alternativa.png'),'Resolution',300);
+        %% Figura 01: convergencia (paso fijo) con pendientes de referencia
+        fig1=figure('Color','w','Name','Figura 01 - Convergencia');
+        hold on;
+        estilos={'o-','s--','^-.'}; colores=lines(3); hl=gobjects(1,3);
+        for im=1:3
+            m=strcmp(tabla.Metodo,metodosFijos{im}) & strncmp(tabla.Estado,'OK',2);
+            hl(im)=plot(tabla.h(m),max(tabla.ErrorMaxRef(m),eps),estilos{im}, ...
+                'Color',colores(im,:),'LineWidth',1.5,'MarkerSize',7);
+        end
+        ie=strcmp(tabla.Metodo,'Euler explicito') & tabla.h==0.2;
+        ir=strcmp(tabla.Metodo,'RK4') & tabla.h==0.2;
+        hh=[min(hs) max(hs)];
+        r1=plot(hh,tabla.ErrorMaxRef(ie)*(hh/0.2),'k:','LineWidth',1.2);
+        r4=plot(hh,tabla.ErrorMaxRef(ir)*(hh/0.2).^4,'k--','LineWidth',1.2);
+        set(gca,'XScale','log','YScale','log'); grid on;
+        xticks(sort(hs)); xticklabels(string(sort(hs))); set(gca,'XMinorTick','off');
+        xlabel('Paso fijo h'); ylabel('Error máximo frente a la referencia');
+        yline(1e-11,'-.','incertidumbre de la referencia','Color',[0.4 0.4 0.4], ...
+            'LineWidth',1.1,'LabelHorizontalAlignment','center','LabelVerticalAlignment','top');
+        title(sprintf('Convergencia de los integradores de paso fijo (\\epsilon=%g, Z(0)=0.1)',p.eps));
+        legend([hl r1 r4],{'Euler explícito','RK4','Euler atrás','Pendiente O(h)', ...
+            'Pendiente O(h^4)'},'Location','southeast');
+        exportgraphics(fig1,fullfile(carpetaFiguras,'fig01_convergencia_alternativa.png'),'Resolution',300);
         fprintf('Figura exportada: fig01_convergencia_alternativa.png\n');
+
+        %% Figura 10: trabajo-precision (error vs evaluaciones de f y vs tiempo)
+        fig10=figure('Color','w','Name','Figura 10 - Trabajo-precision','Position',[60 60 1150 450]);
+        metodosTP={'Euler explicito','RK4','Euler atras','RKF45'};
+        etiq={'Euler explícito','RK4','Euler atrás (Gauss–Seidel)','RKF45 (tol. variable)'};
+        col=lines(4); mk={'o-','s-','^-','d-'};
+        for panel=1:2
+            subplot(1,2,panel); hold on;
+            for im=1:4
+                m=strcmp(tabla.Metodo,metodosTP{im}) & strncmp(tabla.Estado,'OK',2);
+                if panel==1, xx=tabla.EvalF(m); else, xx=tabla.Segundos(m); end
+                plot(xx,max(tabla.ErrorMaxRef(m),eps),mk{im},'Color',col(im,:), ...
+                    'LineWidth',1.4,'MarkerSize',6);
+            end
+            set(gca,'XScale','log','YScale','log'); grid on;
+            ylabel('Error máximo frente a la referencia');
+            if panel==1
+                xlabel('Evaluaciones de f'); title('(a) Error frente a evaluaciones de f');
+                legend(etiq,'Location','northeast');
+            else
+                xlabel('Tiempo de cómputo (s)'); title('(b) Error frente al tiempo');
+            end
+        end
+        exportgraphics(fig10,fullfile(carpetaFiguras,'fig10_trabajo_precision.png'),'Resolution',300);
+        fprintf('Figura exportada: fig10_trabajo_precision.png\n');
     end
 end
 fprintf('\nCOMPARACION COMPLETADA. Revisar posibles FALLOS y discrepancias.\n');
 fprintf('El tiempo de ejecucion depende de MATLAB, equipo y carga de trabajo.\n');
-fprintf('RKF45 se compara en sus nodos aceptados: no se interpola su trayectoria.\n');
-fprintf('Para estudiar convergencia de RKF45 debe variarse RelTol y AbsTol, no h0.\n');
+fprintf('EvalF cuenta solo evaluaciones de f; Euler atras ademas usa Jacobianas y barridos GS.\n');
 
-%% Funciones locales (no modificar funciones de plantillas oficiales, si las hubiera)
+%% FUNCIONES LOCALES
+function [err,cons,mn]=metricas(t,X,solRef,T,info)
+    if strcmp(info.estado,'OK')
+        err=max(abs(X-deval(solRef,min(max(t,0),T))),[],'all');
+        cons=max([max(abs(sum(X(1:3,:),1)-1)),max(abs(sum(X(4:6,:),1)-1))]);
+        mn=min(X,[],'all');
+    else
+        err=NaN; cons=NaN; mn=NaN;
+    end
+end
+
+function info=completar(info)
+    campos={'jac','newton','gs','rechGS','rechPos','rechNewton','rechLinea','rhoMax','evalf'};
+    for k=1:numel(campos)
+        if ~isfield(info,campos{k}), info.(campos{k})=0; end
+    end
+end
+
+function [t,X,info]=explicito(x0,p,T,hBase,orden,opt)
+    cap=1024; tb=zeros(1,cap); Xb=zeros(6,cap); n=1; Xb(:,1)=x0;
+    h=hBase; seguidos=0;
+    info=struct('estado','OK','aceptados',0,'rechazados',0,'evalf',0,'rechPos',0,'hMin',inf);
+    while T-tb(n)>1e-10*max(1,T)
+        h=min(h,T-tb(n)); x=Xb(:,n);
+        if orden==1
+            xn=x+h*modelo(x,p); info.evalf=info.evalf+1;
+        else
+            k1=modelo(x,p); k2=modelo(x+h*k1/2,p);
+            k3=modelo(x+h*k2/2,p); k4=modelo(x+h*k3,p);
+            xn=x+h*(k1+2*k2+2*k3+k4)/6; info.evalf=info.evalf+4;
+        end
+        if ~all(isfinite(xn)) || any(abs(xn)>1e8), causa='no finito';
+        elseif any(xn<-opt.tolPos), causa='negativo';
+        elseif abs(sum(xn(1:3))-1)>=opt.tolCons || abs(sum(xn(4:6))-1)>=opt.tolCons, causa='conservacion';
+        elseif 1-p.K*xn(5)<=0 || 1+xn(3)<=0, causa='dominio';
+        else, causa='ok';
+        end
+        if strcmp(causa,'ok')
+            n=n+1; if n>cap, cap=2*cap; tb(cap)=0; Xb(6,cap)=0; end
+            tb(n)=tb(n-1)+h; Xb(:,n)=xn;
+            info.aceptados=info.aceptados+1; info.hMin=min(info.hMin,h);
+            h=min(hBase,1.5*h); seguidos=0;
+        else
+            info.rechazados=info.rechazados+1; info.rechPos=info.rechPos+1; seguidos=seguidos+1;
+            if ~opt.reducir
+                info.estado=['INADMISIBLE (' causa ')']; break
+            end
+            h=h/2;
+            if h<opt.minH || seguidos>opt.maxRechazos
+                info.estado=['INADMISIBLE (' causa ')']; break
+            end
+        end
+    end
+    t=tb(1:n); X=Xb(:,1:n);
+end
+
+function [t,X,info]=rkf45(x0,p,T,h0,hmax,rtol,atol,opt)
+    cap=1024; tb=zeros(1,cap); Xb=zeros(6,cap); n=1; Xb(:,1)=x0;
+    h=h0; intentos=0;
+    info=struct('estado','OK','aceptados',0,'rechazados',0,'evalf',0,'rechPos',0,'hMin',inf,'hMax',0);
+    while T-tb(n)>1e-12*max(1,T)
+        intentos=intentos+1;
+        if intentos>opt.maxIntentos || h<opt.hmin
+            info.estado='FALLO (paso minimo o demasiados intentos)'; break
+        end
+        h=min([h,hmax,T-tb(n)]); x=Xb(:,n);
+        k1=modelo(x,p);
+        k2=modelo(x+h*(1/4*k1),p);
+        k3=modelo(x+h*(3/32*k1+9/32*k2),p);
+        k4=modelo(x+h*(1932/2197*k1-7200/2197*k2+7296/2197*k3),p);
+        k5=modelo(x+h*(439/216*k1-8*k2+3680/513*k3-845/4104*k4),p);
+        k6=modelo(x+h*(-8/27*k1+2*k2-3544/2565*k3+1859/4104*k4-11/40*k5),p);
+        info.evalf=info.evalf+6;
+        x4=x+h*(25/216*k1+1408/2565*k3+2197/4104*k4-1/5*k5);
+        x5=x+h*(16/135*k1+6656/12825*k3+28561/56430*k4-9/50*k5+2/55*k6);
+        esc=atol+rtol.*max(abs(x),abs(x5));
+        er=max(abs(x5-x4)./esc); if ~isfinite(er), er=inf; end
+        valido=all(isfinite(x5)) && all(x5>=-opt.tolPos) && 1-p.K*x5(5)>0 && 1+x5(3)>0;
+        if er<=1 && valido
+            n=n+1; if n>cap, cap=2*cap; tb(cap)=0; Xb(6,cap)=0; end
+            tb(n)=tb(n-1)+h; Xb(:,n)=x5;
+            info.aceptados=info.aceptados+1;
+            info.hMin=min(info.hMin,h); info.hMax=max(info.hMax,h);
+        else
+            info.rechazados=info.rechazados+1;
+            if ~valido, info.rechPos=info.rechPos+1; end
+        end
+        if er==0, fac=2; else, fac=min(2,max(0.2,0.9*(1/er)^(1/5))); end
+        if ~valido, fac=min(fac,0.5); end
+        h=h*fac;
+    end
+    t=tb(1:n); X=Xb(:,1:n);
+end
+
+function [t,X,info]=euler_atras(x0,p,T,hBase,opt)
+    cap=1024; tb=zeros(1,cap); Xb=zeros(6,cap); n=1; Xb(:,1)=x0;
+    h=hBase; seguidos=0;
+    info=struct('estado','OK','aceptados',0,'rechazados',0,'newton',0,'gs',0, ...
+        'jac',0,'evalf',0,'rechGS',0,'rechPos',0,'rechNewton',0,'rechLinea',0, ...
+        'rhoMax',0,'hMin',inf);
+    while T-tb(n)>1e-10*max(1,T)
+        h=min(h,T-tb(n));
+        [xn,ok,causa,s]=paso_implicito(Xb(:,n),p,h,opt);
+        info.newton=info.newton+s.newton; info.gs=info.gs+s.gs;
+        info.jac=info.jac+s.jac; info.evalf=info.evalf+s.evalf;
+        info.rhoMax=max(info.rhoMax,s.rho);
+        if ok && ~(all(xn>=-opt.tolPos) && abs(sum(xn(1:3))-1)<opt.tolCons ...
+                && abs(sum(xn(4:6))-1)<opt.tolCons)
+            ok=false; causa='positividad';
+        end
+        if ok
+            n=n+1; if n>cap, cap=2*cap; tb(cap)=0; Xb(6,cap)=0; end
+            tb(n)=tb(n-1)+h; Xb(:,n)=xn;
+            info.aceptados=info.aceptados+1; info.hMin=min(info.hMin,h);
+            h=min(hBase,1.5*h); seguidos=0;
+        else
+            info.rechazados=info.rechazados+1; seguidos=seguidos+1;
+            switch causa
+                case {'gs_rho','gs_residuo'}, info.rechGS=info.rechGS+1;
+                case 'positividad',           info.rechPos=info.rechPos+1;
+                case 'linea',                 info.rechLinea=info.rechLinea+1;
+                otherwise,                    info.rechNewton=info.rechNewton+1;
+            end
+            if ~opt.reducir
+                info.estado=['FALLO (' causa ')']; break
+            end
+            h=h/2;
+            if h<opt.minH || seguidos>opt.maxRechazos
+                info.estado=['FALLO (' causa ')']; break
+            end
+        end
+    end
+    t=tb(1:n); X=Xb(:,1:n);
+end
+
+function [x,ok,causa,s]=paso_implicito(xn,p,h,opt)
+    x=xn; ok=false; causa='newton_maxiter';
+    s=struct('newton',0,'gs',0,'jac',0,'evalf',0,'rho',0);
+    for k=1:opt.maxNewton
+        G=x-xn-h*modelo(x,p); s.evalf=s.evalf+1;
+        r=norm(G,inf);
+        if r<opt.tolResidual, ok=true; causa='ok'; return, end
+        W=eye(6)-h*jacobiana_f(x,p); s.jac=s.jac+1;
+        if any(~isfinite(W),'all') || any(abs(diag(W))<1e-13)
+            causa='singular'; return
+        end
+        if strcmp(opt.solver,'gs')
+            Bgs=-(tril(W)\triu(W,1));
+            rho=max(abs(eig(Bgs))); s.rho=max(s.rho,rho);
+            if rho>=1, causa='gs_rho'; return, end
+            [delta,exito,it]=gauss_seidel(W,-G,opt); s.gs=s.gs+it;
+            if ~exito, causa='gs_residuo'; return, end
+        else
+            delta=W\(-G);
+            if any(~isfinite(delta)), causa='singular'; return, end
+        end
+        alpha=1; aceptado=false;
+        while alpha>=1/1024
+            cand=x+alpha*delta;
+            if all(isfinite(cand)) && all(cand>=-opt.tolPos) && ...
+                    1-p.K*cand(5)>0 && 1+cand(3)>0
+                v=cand-xn-h*modelo(cand,p); s.evalf=s.evalf+1;
+                if norm(v,inf)<r, x=cand; aceptado=true; break, end
+            end
+            alpha=alpha/2;
+        end
+        if ~aceptado, causa='linea'; return, end
+        s.newton=s.newton+1;
+    end
+    G=x-xn-h*modelo(x,p); s.evalf=s.evalf+1;
+    if norm(G,inf)<opt.tolResidual, ok=true; causa='ok'; end
+end
+
+function [y,ok,k]=gauss_seidel(A,b,opt)
+    n=numel(b); y=zeros(n,1); ok=false;
+    for k=1:opt.maxGS
+        ant=y;
+        for i=1:n
+            y(i)=(b(i)-A(i,1:i-1)*y(1:i-1)-A(i,i+1:n)*ant(i+1:n))/A(i,i);
+        end
+        if norm(y-ant,inf)<opt.tolGS && norm(A*y-b,inf)<opt.tolLin
+            ok=true; return
+        end
+    end
+end
+
 function dx=modelo(x,p)
     U=x(1); M=x(2); Z=x(3); S=x(4); I=x(5); R=x(6);
+    if 1-p.K*I<=0 || 1+Z<=0, dx=NaN(6,1); return, end
     a=p.b2/(1-p.K*I); b=p.beta*(1+M)/(1+Z);
     dx=[p.mu1-p.b1*U*M-a*U*Z-p.mu1*U;
         p.b1*U*M-p.mu1*M;
@@ -106,108 +344,14 @@ function dx=modelo(x,p)
         p.eps*(p.gamma*I-(p.eta+p.mu2)*R)];
 end
 
-function [X,nf]=expl_fijo(x,p,h,N,orden)
-    X=zeros(6,N+1); X(:,1)=x; nf=0;
-    for n=1:N
-        if orden==1
-            X(:,n+1)=X(:,n)+h*modelo(X(:,n),p); nf=nf+1;
-        else
-            a=modelo(X(:,n),p);
-            b=modelo(X(:,n)+h*a/2,p);
-            c=modelo(X(:,n)+h*b/2,p);
-            d=modelo(X(:,n)+h*c,p);
-            X(:,n+1)=X(:,n)+h*(a+2*b+2*c+d)/6; nf=nf+4;
-        end
-        if any(~isfinite(X(:,n+1))) || (1-p.K*X(5,n+1)<=0) || (1+X(3,n+1)<=0)
-            error('Trayectoria fuera de dominio');
-        end
-    end
-end
-
-function [ts,Xs,nf,rech]=rkf45(x,p,T,h,o)
-    ts=0; Xs=x; nf=0; rech=0; intento=0;
-    while ts(end)<T-1e-12
-        intento=intento+1;
-        if intento>200000 || h<o.hmin, error('RKF45: demasiados intentos/paso pequeno'); end
-        h=min([h,o.hmax,T-ts(end)]);
-        x=Xs(:,end);
-        k1=modelo(x,p);
-        k2=modelo(x+h*(k1/4),p);
-        k3=modelo(x+h*(3*k1/32+9*k2/32),p);
-        k4=modelo(x+h*(1932*k1/2197-7200*k2/2197+7296*k3/2197),p);
-        k5=modelo(x+h*(439*k1/216-8*k2+3680*k3/513-845*k4/4104),p);
-        k6=modelo(x+h*(-8*k1/27+2*k2-3544*k3/2565+1859*k4/4104-11*k5/40),p);
-        nf=nf+6;
-        y4=x+h*(25*k1/216+1408*k3/2565+2197*k4/4104-k5/5);
-        y5=x+h*(16*k1/135+6656*k3/12825+28561*k4/56430-9*k5/50+2*k6/55);
-        sc=o.atol+o.rtol.*max(abs(x),abs(y5));
-        er=max(abs(y5-y4)./sc);
-        valido=all(isfinite(y5)) && all(y5>=-1e-10) && 1-p.K*y5(5)>0 && 1+y5(3)>0;
-        if er<=1 && valido
-            ts(end+1)=ts(end)+h; %#ok<AGROW>
-            Xs(:,end+1)=y5; %#ok<AGROW>
-        else
-            rech=rech+1;
-        end
-        if er==0, fac=2; else, fac=min(2,max(0.2,0.9*er^(-1/5))); end
-        if ~valido, fac=min(fac,0.5); end
-        h=h*fac;
-    end
-end
-
-function [X,nf,itN,itGS]=impl_fijo(x,p,h,N,o)
-    X=zeros(6,N+1); X(:,1)=x; nf=0; itN=0; itGS=0;
-    for n=1:N
-        xn=X(:,n); y=xn; ok=false;
-        for k=1:o.maxNewton
-            F=modelo(y,p); nf=nf+1;
-            G=y-xn-h*F;
-            if norm(G,inf)<o.tolG, ok=true; break; end
-            W=eye(6)-h*jac_f(y,p);
-            if any(abs(diag(W))<1e-12), error('Diagonal casi nula'); end
-            D=diag(diag(W)); L=tril(W,-1); U=triu(W,1);
-            if max(abs(eig(-(D+L)\U)))>=1, error('Gauss-Seidel no converge'); end
-            delta=zeros(6,1); gsOK=false;
-            for j=1:o.maxGS
-                ant=delta;
-                for i=1:6
-                    delta(i)=(-G(i)-W(i,1:i-1)*delta(1:i-1)-W(i,i+1:6)*ant(i+1:6))/W(i,i);
-                end
-                itGS=itGS+1;
-                if norm(W*delta+G,inf)<o.tolGS, gsOK=true; break; end
-            end
-            if ~gsOK, error('GS no alcanza residuo'); end
-            alpha=1; okPaso=false;
-            while alpha>1/2048
-                yy=y+alpha*delta;
-                if all(yy>=-1e-10) && 1-p.K*yy(5)>0 && 1+yy(3)>0
-                    Fy=modelo(yy,p); nf=nf+1;
-                    if norm(yy-xn-h*Fy,inf)<norm(G,inf)
-                        y=yy; okPaso=true; break;
-                    end
-                end
-                alpha=alpha/2;
-            end
-            if ~okPaso, error('Newton: busqueda de paso fallo'); end
-            itN=itN+1;
-        end
-        if ~ok
-            F=modelo(y,p); nf=nf+1;
-            if norm(y-xn-h*F,inf)>=o.tolG, error('Newton no convergio'); end
-        end
-        if any(~isfinite(y)) || any(y < -1e-10), error('Solucion no fisica'); end
-        X(:,n+1)=y;
-    end
-end
-
-function J=jac_f(x,p)
+function J=jacobiana_f(x,p)
     U=x(1); M=x(2); Z=x(3); S=x(4); I=x(5);
     a=p.b2/(1-p.K*I); da=p.b2*p.K/(1-p.K*I)^2;
     b=p.beta*(1+M)/(1+Z); bm=p.beta/(1+Z); bz=-p.beta*(1+M)/(1+Z)^2; e=p.eps;
     J=[-p.b1*M-a*Z-p.mu1, -p.b1*U, -a*U, 0, -da*U*Z, 0;
-       p.b1*M, p.b1*U-p.mu1, 0, 0, 0, 0;
-       a*Z, 0, a*U-p.mu1, 0, da*U*Z, 0;
-       0, -e*bm*S*I, -e*bz*S*I, e*(-b*I-p.mu2), -e*b*S, e*p.eta;
-       0, e*bm*S*I, e*bz*S*I, e*b*I, e*(b*S-p.gamma-p.mu2), 0;
-       0, 0, 0, 0, e*p.gamma, -e*(p.eta+p.mu2)];
+        p.b1*M, p.b1*U-p.mu1, 0, 0, 0, 0;
+        a*Z, 0, a*U-p.mu1, 0, da*U*Z, 0;
+        0, -e*bm*S*I, -e*bz*S*I, e*(-b*I-p.mu2), -e*b*S, e*p.eta;
+        0, e*bm*S*I, e*bz*S*I, e*b*I, e*(b*S-p.gamma-p.mu2), 0;
+        0, 0, 0, 0, e*p.gamma, -e*(p.eta+p.mu2)];
 end
