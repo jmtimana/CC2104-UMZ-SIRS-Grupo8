@@ -1,115 +1,183 @@
-\section{Resultados preliminares}
-Se presentan las verificaciones de conservación y las comparaciones entre integradores para evaluar el modelo numérico (objetivos 1 y 2), seguidas del análisis de separación de escalas y de dos escenarios de acoplamiento informativo (objetivos 3 y 4). Además de variar $\varepsilon$, se realizaron barridos independientes de $b_1$, $b_2$, $K$ y $\beta$ para estudiar la sensibilidad de la infección (objetivo 3).
-\subsection{Conservación y comparación de integradores}
-En los dos estados iniciales y con $h=0.1$, todas las simulaciones terminaron sin poblaciones negativas. Para la condición alternativa, la tabla \ref{tab:errores} sintetiza los errores frente a \texttt{ode45}, las evaluaciones de función y la conservación. En la configuración mostrada, RK4 obtuvo el menor error, mientras RKF45 consiguió una aproximación del mismo orden decimal con menos evaluaciones de $\mathbf f$. No se infiere de ello una superioridad universal ni una comparación con exactitud equivalente: RKF45 adaptó automáticamente la malla, a diferencia de los otros métodos.
+\section{Resultados}\label{sec:resultados}
+Los resultados se organizaron por objetivo específico. Los objetivos 1 y 2 concernieron a la estabilidad numérica y los objetivos 3 y 4 al comportamiento epidemiológico; la síntesis final los distinguió.
 
-\begin{table}[t]
-\centering\footnotesize
-\caption{Precisión en $T=100$, $\varepsilon=0.01$, condición alternativa y paso fijo o inicial $h=0.1$.}
-\label{tab:errores}
-\begin{tabular}{lrrr}
-\toprule Método & Error máximo & Eval. $\mathbf f$ & Error cons. \\ \midrule
-Euler explícito & $1.2883\cdot10^{-3}$ & 1000 & $1.11\cdot10^{-15}$ \\
-RK4 & $7.3493\cdot10^{-10}$ & 4000 & $8.88\cdot10^{-16}$ \\
-RKF45 & $1.1960\cdot10^{-9}$ & 702 & $2.22\cdot10^{-16}$ \\
-Euler atrás & $1.2392\cdot10^{-3}$ & 4150 & $7.15\cdot10^{-11}$ \\
-\bottomrule
-\end{tabular}
-\par{\scriptsize\textit{Nota.} Eval. $\mathbf f$: evaluaciones; Error cons.: desviación máxima.\par}
-\end{table}
+\subsection{Objetivo 1: formulación, implementación y validación}
+\paragraph{Validación de las referencias.} Al estrechar \texttt{ode15s} de $r_{\rm tol}=10^{-8}$ a $10^{-11}$, la diferencia con la solución siguiente descendió de $5.3$--$6.9\cdot10^{-9}$ a $1.5$--$4.8\cdot10^{-11}$ en los cuatro casos, y la diferencia con la más estricta fue como máximo $8.9\cdot10^{-9}$ con $r_{\rm tol}=10^{-8}$. Los integradores independientes (\texttt{ode45}, \texttt{ode113}, $r_{\rm tol}=10^{-12}$) difirieron de la referencia estricta en menos de $1.3\cdot10^{-11}$. La conservación de las referencias fue de $5.3\cdot10^{-11}$ como máximo y la menor componente fue $-3.5\cdot10^{-11}$, dentro de la tolerancia de positividad de $10^{-10}$. En los escenarios I y II, las ramas analíticas $M$ y $Z$ fueron coherentes; las diferencias de $U$, $M$ y $Z$ con la referencia numérica no superaron $1.1\cdot10^{-9}$ y las de $I$ fueron de $2.8\cdot10^{-8}$ (escenario I) y $1.5\cdot10^{-9}$ (escenario II) en $\tau=30$. Por ello, los errores inferiores a $\sim10^{-11}$ se interpretaron con cautela.
 
-La reducción del error al dividir $h$ entre dos fue aproximadamente proporcional a $h$ para ambos métodos de Euler. En el escenario original RK4 disminuyó de $1.7938\cdot10^{-8}$ ($h=0.4$) a $1.1081\cdot10^{-9}$ ($h=0.2$), con razón de $16.19$ y orden observado próximo a cuatro. Los resultados a pasos aún menores se interpretaron con cautela por la presencia de errores próximos a la precisión de la referencia. La figura \ref{fig:convergencia} permite comparar órdenes en escala logarítmica.
-\begin{figure}[t]
-\centering\figpng{fig01_convergencia_alternativa.png}
-\caption{Errores de Euler y RK4 frente a referencia según el paso fijo. Programa MATLAB 05; ambos ejes se muestran en escala logarítmica.}
-\label{fig:convergencia}
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=\columnwidth]{imagenes/fig01_convergencia_alternativa.png}
+\caption{Error máximo frente a la referencia según el paso fijo $h$ ($\varepsilon=0.01$, $Z(0)=0.1$), con pendientes de referencia $\mathcal O(h)$ y $\mathcal O(h^4)$. Ambos ejes son logarítmicos. Euler explícito y Euler hacia atrás casi coinciden. La línea gris en $10^{-11}$ marca la incertidumbre de la referencia.}
+\label{fig:conv}
 \end{figure}
 
-La adaptación automática se comprobó adicionalmente mediante la secuencia de pasos aceptados de RKF45, cuyo tamaño respondió a los cambios de la dinámica informativa. Esta figura muestra el mecanismo computacional que permitió reducir el número de evaluaciones; no constituye una comparación de estabilidad absoluta.
-
-\begin{figure}[t]
-\centering\figpng{fig05_paso_adaptativo_rkf45.png}
-\caption{Evolución del paso aceptado por RKF45 para la condición inicial alternativa. Programa MATLAB 03 (panel ``Adaptación del paso'').}
-\label{fig:rkf45_pasos}
-\end{figure}
-
-\subsection{Rigidez, estabilidad y costo computacional}
-Al disminuir $\varepsilon$ de $0.1$ a $0.01$ y $0.001$, el indicador espectral local aumentó de $12.8959$ a $159.107$ y $1633.49$. Al fijar $\tau_f=1$, esta comparación cubrió horizontes rápidos de 10, 100 y 1000, respectivamente. El crecimiento de la razón es consistente con la separación de escalas, sin ser una prueba independiente de rigidez global.
-
-\begin{table}[t]
+\begin{table}[!htb]
 \centering\footnotesize
-\caption{Resultado con paso nominal $h=4$ según la separación temporal.}
-\label{tab:rigidez}
-\begin{tabular}{cclll}
-\toprule $\varepsilon$ & SR & Euler exp. & RK4 & Euler atrás \\ \midrule
-$0.1$ & 12.90 & Válido & Válido & Válido \\
-$0.01$ & 159.11 & No admisible$^{\dagger}$ & Inadmisible & Válido* \\
-$0.001$ & 1633.49 & Inadmisible & Inadmisible & Válido* \\
+\setlength{\tabcolsep}{3pt}
+\caption{Orden observado y costo interno con $h=0.1$ ($T=100$, $\varepsilon=0.01$). RKF45 con $r_{\rm tol}=10^{-8}$.}
+\label{tab:orden}
+\begin{tabular}{lrrrrr}
+\toprule Método & $p_{\rm obs}$ & Pasos & Eval. $\mathbf f$ & Jac. & Barr. GS \\ \midrule
+Euler explícito & 1.030 & 1000 & 1000 & 0 & 0 \\
+RK4 & 4.000 & 1000 & 4000 & 0 & 0 \\
+Euler atrás & 0.974 & 1000 & 4150 & 1575 & 5197 \\
+RKF45 & -- & 117 & 702 & 0 & 0 \\
 \bottomrule
-
 \end{tabular}
-\par{\scriptsize\textit{Nota.} SR: razón espectral; $^{\dagger}$inadmisible por restricciones; *válido tras reducir $h$.\par}
+\par{\scriptsize\textit{Nota.} $p_{\rm obs}$: de $h=0.2$ a $0.1$; Jac.: jacobianas; Barr. GS: barridos de Gauss--Seidel.\par}
 \end{table}
 
-Para $\varepsilon=0.01$ y $h=4$, Euler explícito presentó violación de restricciones y RK4 quedó clasificado como inadmisible. La implementación implícita finalizó con error máximo $0.03116$ respecto a \texttt{ode15s}, pero necesitó 39 pasos aceptados y 18 rechazados. Para $\varepsilon=0.001$ y $h=4$, Euler hacia atrás registró 365 pasos aceptados y 153 rechazados, con error aproximado $0.0305$. La diferencia revela una ventaja de robustez del procedimiento implementado en esos experimentos, a costa de resolver múltiples sistemas internos y reducir pasos. No se atribuye ese resultado únicamente a la estabilidad absoluta teórica del integrador.
+\paragraph{Orden y precisión.} Con la condición alternativa y $h\in[0.025,0.8]$, todas las simulaciones de paso fijo terminaron sin componentes negativas; el error de conservación fue $\le2.0\cdot10^{-15}$ en los métodos explícitos y $\le3.3\cdot10^{-10}$ en Euler hacia atrás. La Figura~\ref{fig:conv} mostró pendientes $\mathcal O(h)$ para ambos Euler y $\mathcal O(h^4)$ para RK4; el orden observado entre $h=0.2$ y $h=0.1$ se dio en la Tabla~\ref{tab:orden}. Los errores de RK4 con $h=0.05$ y $h=0.025$ ($4.6\cdot10^{-11}$ y $2.9\cdot10^{-12}$) quedaron en o por debajo de la incertidumbre de la referencia.
+
+
+
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=0.91\textwidth]{imagenes/fig02_rigidez_estabilidad.png}
-\caption{Error máximo frente a \texttt{ode15s} según el paso nominal para $\varepsilon=0.1$, $0.01$ y $0.001$ (paneles de izquierda a derecha). El eje vertical es logarítmico para distinguir los errores de RK4. Solo aparecen los casos admisibles.}
+\includegraphics[width=0.68\textwidth]{imagenes/fig10_trabajo_precision.png}
+\caption{Error máximo frente a (a) las evaluaciones de $\mathbf f$ y (b) el tiempo de cómputo. En RKF45 se varió la tolerancia ($10^{-4}$ a $10^{-10}$); en los demás, el paso $h$.}
+\label{fig:trabajo}
+\end{figure*}
+
+\paragraph{Trabajo y precisión.} En RKF45 el error global fue aproximadamente $0.12\,r_{\rm tol}$ para $r_{\rm tol}\le10^{-6}$ (de $1.2\cdot10^{-7}$ a $1.2\cdot10^{-11}$), con 61 a 275 pasos aceptados y un solo rechazo (con $r_{\rm tol}=10^{-10}$). La Figura~\ref{fig:trabajo} mostró que, para errores de $10^{-9}$ a $10^{-11}$, RKF45 necesitó unas cinco veces menos evaluaciones que RK4 (702 frente a 4000 para $\sim10^{-9}$ y 1656 frente a 8000 para $\sim10^{-11}$), mientras que los métodos de Euler no bajaron de $3\cdot10^{-4}$ en el rango explorado. En tiempo (mediana de cinco corridas), RKF45 tomó $2.5\cdot10^{-3}$\,s y RK4 $1.8\cdot10^{-2}$\,s para $\sim10^{-9}$, y Euler hacia atrás $0.21$\,s para $1.2\cdot10^{-3}$.
+
+
+\subsection{Objetivo 2: métodos explícitos e implícitos frente a la rigidez}
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.68\textwidth]{imagenes/fig02_rigidez_estabilidad.png}
+\caption{Error máximo frente a \texttt{ode15s} según el paso nominal $h$ para $\varepsilon=0.1$, $0.01$ y $0.001$ (columnas); fila superior, sin reducción de paso; inferior, con reducción. Las cruces indican casos inadmisibles o fallidos; Euler hacia atrás con Gauss--Seidel y con solución directa coinciden cuando ambos terminan.}
 \label{fig:rigidez}
 \end{figure*}
 
-\subsection{Variación de parámetros}
-Se varió un parámetro por ejecución, manteniendo fijos los restantes valores del conjunto exploratorio, con la condición inicial alternativa. La tabla~\ref{tab:parametricos} resume el intervalo de fracciones infectadas finales observado en el CSV exportado por el experimento 08. Todos los casos registrados finalizaron con estado \texttt{OK} y error máximo de conservación menor que $2.5\cdot10^{-15}$. Estos resultados cuantifican sensibilidad local al diseño experimental; no constituyen una calibración epidemiológica ni garantizan tendencias universales.
-\begin{table}[!tbp]
+El indicador espectral aumentó con $1/\varepsilon$: $\mathrm{SR}=12.90$, $159.11$ y $1633.49$ para $\varepsilon=0.1$, $0.01$ y $0.001$. La Figura~\ref{fig:rigidez} comparó los errores frente al paso nominal sin y con reducción de paso, e incluyó RKF45 y las dos variantes de Euler hacia atrás. Con $h=4$ y $\varepsilon\le0.01$, Euler explícito y RK4 fueron inadmisibles bajo la política nominal; Euler hacia atrás con Gauss--Seidel falló por $\rho\ge1$ ($\varepsilon=0.1$) o por residuo lineal ($\varepsilon\le0.01$), mientras que con solución directa terminó sin rechazos.
+
+
+\begin{table}[!htb]
 \centering\footnotesize
-\caption{Variación uniparamétrica: fracción infectada final en los extremos del barrido.}
-\label{tab:parametricos}
+\setlength{\tabcolsep}{3pt}
+\caption{Paso máximo estable por bisección ($T=1000$, $|\lambda|_{\max}=1$).}
+\label{tab:hmax}
 \begin{tabular}{lcccc}
-\toprule
-Parámetro & Valor bajo & $I_f$ & Valor alto & $I_f$ \\
-\midrule
-$b_1$ & 0.5 & 0.3222 & 2.0 & 0.4429 \\
-$b_2$ & 0.5 & 0.3892 & 2.0 & 0.2405 \\
-$K$ & 0 & 0.3892 & 0.9 & 0.3222 \\
-$\beta$ & 2 & 0.0206 & 8 & 0.3792 \\
+\toprule Método & $\varepsilon=10^{-1}$ & $10^{-2}$ & $10^{-3}$ & Límite \\ \midrule
+Euler explícito & 2.035 & 2.035 & 2.036 & 2 \\
+RK4 & 2.817 & 2.819 & 2.816 & 2.78 \\
+Euler atrás (GS) & 2.112 & 2.999 & 3.260 & -- \\
+Euler atrás (directo) & 12.87 & $\ge64$ & $\ge64$ & -- \\
 \bottomrule
 \end{tabular}
-\par{\scriptsize\textit{Nota.} $I_f$: fracción infectada final; demás parámetros fijos.\par}
+\par{\scriptsize\textit{Nota.} Límite: $2/|\lambda|$ (Euler) y $2.78/|\lambda|$ (RK4); $\ge64$: tope de la bisección.\par}
 \end{table}
 
-\begin{figure*}[!b]
+\begin{figure}[!htb]
 \centering
-\includegraphics[width=0.72\textwidth]{imagenes/fig03_escenario_desinformacion.png}
-\caption{Dinámica epidemiológica con desinformación y control sin difusión informativa. Programa MATLAB 07.}
-\label{fig:desinformacion}
-\end{figure*}
+\includegraphics[width=\columnwidth]{imagenes/fig08_rho_gauss_seidel.png}
+\caption{Radio espectral de Gauss--Seidel para $\mathbf W=\mathbf I-h\mathbf J_f$ ($\varepsilon=0.01$), evaluado en $\mathbf x_0$ y en $\mathbf x(t=50)$. Ambos ejes son logarítmicos; la línea discontinua indica $\rho=1$.}
+\label{fig:rho}
+\end{figure}
 
-\subsection{Desinformación y escepticismo}
-Se contrastó el efecto del acoplamiento social con un control informativo constante para dos conjuntos de parámetros. La tabla \ref{tab:epidemia} presenta las fracciones infectadas finales en tiempo lento $\tau=30$. En el escenario I, con desinformación, $I$ terminó alrededor de $0.08814$, frente a $1.65\cdot10^{-9}$ en el control. En el escenario II, con escepticismo, terminó en $1.51\cdot10^{-9}$, mientras el control finalizó aproximadamente en $0.08813$.
+El paso máximo estable de los explícitos no dependió de $\varepsilon$ y coincidió con los límites teóricos (Tabla~\ref{tab:hmax}); en Euler hacia atrás con Gauss--Seidel fue de $2.11$ a $3.26$, y con solución directa llegó a $12.9$ y alcanzó el tope de $64$ para $\varepsilon\le0.01$. La Figura~\ref{fig:rho} mostró que $\rho(\mathbf T_{GS})$ en $\mathbf x(t=50)$ cruzó la unidad entre $h=3.5$ ($0.83$) y $4.4$ ($1.09$); en $\mathbf x_0$ se mantuvo por debajo de uno hasta $h\approx21$, con un pico de $121.9$ en $h\approx33$. La dominancia diagonal estricta se perdió en $h\approx1.5$ ($\mathbf x(t=50)$) y $h\approx3.5$ ($\mathbf x_0$), antes que la convergencia.
 
-\begin{table}[t]
+
+
+\begin{table}[!htb]
 \centering\footnotesize
-\caption{Fracción infectada al final de los escenarios epidemiológicos ($\tau=30$).}
-\label{tab:epidemia}
-\begin{tabular}{lrr}
-\toprule Escenario & Control & Con acoplamiento \\ \midrule
-I: desinformación & $1.6453\cdot10^{-9}$ & $0.08814414$ \\
-II: escepticismo & $0.08812925$ & $1.5130\cdot10^{-9}$ \\
+\setlength{\tabcolsep}{2.5pt}
+\caption{Costo con $h$ nominal $=4$ y reducción de paso (RKF45, adaptativo).}
+\label{tab:rechazos}
+\begin{tabular}{lcrrcrr}
+\toprule & \multicolumn{3}{c}{$\varepsilon=0.01$} & \multicolumn{3}{c}{$\varepsilon=0.001$} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+Método & A/R & Ev. & Jac. & A/R & Ev. & Jac. \\ \midrule
+Euler explícito & 33/9 & 42 & -- & 457/242 & 699 & -- \\
+RK4 & 31/8 & 156 & -- & 353/137 & 1960 & -- \\
+RKF45 & 113/2 & 690 & -- & 339/3 & 2052 & -- \\
+Euler atrás (GS) & 39/18 & 255 & 117 & 365/153 & 1976 & 882 \\
+Euler atrás (dir.) & 25/0 & 161 & 68 & 250/0 & 1290 & 520 \\
 \bottomrule
 \end{tabular}
-\par{\scriptsize\textit{Nota.} Control: sin información; acoplamiento: con información.\par}
+\par{\scriptsize\textit{Nota.} A/R: pasos aceptados/rechazados; Ev.: evaluaciones de $\mathbf f$; Jac.: jacobianas.\par}
 \end{table}
 
-En las dos trayectorias acopladas, el error máximo de RK4 respecto a \texttt{ode15s} fue $2.82\cdot10^{-8}$ y $5.47\cdot10^{-8}$, respectivamente. Los errores de conservación estuvieron alrededor de $10^{-15}$ y las componentes permanecieron no negativas. Los controles y las curvas informativas se ilustran en las figuras \ref{fig:desinformacion} y \ref{fig:escepticismo}; representan únicamente los horizontes e hipótesis considerados.
+Con reducción de paso y $h=4$, todos los métodos terminaron (Tabla~\ref{tab:rechazos}), pero con costos y errores distintos. Los explícitos redujeron su paso efectivo a $2.19$ (Euler) y $2.83$ (RK4) en $\varepsilon=0.001$, cerca de sus límites de estabilidad, con 242 y 137 rechazos, y con errores de $0.14$ y $6.4\cdot10^{-3}$. Euler hacia atrás con Gauss--Seidel redujo el paso a $2.74$ con 153 rechazos, todos por Gauss--Seidel, y con solución directa mantuvo $h=4$; ambos tuvieron el mismo error ($3.0\cdot10^{-2}$). RKF45 no necesitó política alguna: alcanzó $1.2\cdot10^{-9}$ y $2.8\cdot10^{-9}$ con 2 y 3 rechazos.
 
-
-
-En conjunto, el contraste de integradores mostró diferencias importantes en precisión y en admisibilidad a pasos grandes; al disminuir $\varepsilon$ creció el indicador espectral inicial y se requirió mayor atención a la estabilidad. Los dos escenarios de acoplamiento produjeron respuestas epidémicas opuestas dentro del horizonte simulado, sin que ello constituya una demostración de su comportamiento asintótico. El barrido de parámetros mostró diferencias apreciables en la infección final, sin violar la conservación poblacional en los casos registrados.
 
 \begin{figure*}[!t]
 \centering
-\includegraphics[width=0.72\textwidth]{imagenes/fig04_escenario_escepticismo.png}
-\caption{Dinámica epidemiológica con escepticismo y control sin difusión informativa. Programa MATLAB 07.}
-\label{fig:escepticismo}
+\includegraphics[width=0.68\textwidth]{imagenes/fig07_costo_vs_epsilon.png}
+\caption{Evaluaciones mínimas de $\mathbf f$ para un error $\le10^{-3}$ frente a $1/\varepsilon$: (izquierda) conjunto base, $\mu=1$; (derecha) escenario I de Bulai et al. (2024), $\mu=5.2$. Los puntos ausentes indican que ningún parámetro probado alcanzó el objetivo.}
+\label{fig:costo}
 \end{figure*}
+
+El costo para alcanzar un error $\le10^{-3}$ (Figura~\ref{fig:costo}) creció casi proporcionalmente a $1/\varepsilon$ en RK4 (de 20 a $2\cdot10^6$ evaluaciones en el conjunto base) y en \texttt{ode45} (de 73 a $1.9\cdot10^6$), y se mantuvo casi plano en \texttt{ode15s} (de 44 a 227 en el conjunto base y de 53 a 79 en el de Bulai). En el conjunto de Bulai, \texttt{ode45} requirió $5.0\cdot10^{7}$ evaluaciones con $\varepsilon=10^{-6}$ frente a 79 de \texttt{ode15s}, y Euler hacia atrás con solución directa requirió $3.0\cdot10^{5}$, también proporcional a $1/\varepsilon$ para $\varepsilon\le10^{-3}$. En el conjunto base, Euler hacia atrás no alcanzó el error objetivo con los pasos ensayados, y RK4 no se evaluó con $\varepsilon\le10^{-5}$ en el de Bulai por exceder el límite de pasos.
+
+
+\subsection{Objetivo 3: variación de parámetros}
+\begin{table}[!htb]
+\centering\footnotesize
+\setlength{\tabcolsep}{3pt}
+\caption{Variación uniparamétrica a $\tau=20$ (casos seleccionados).}
+\label{tab:parametricos}
+\begin{tabular}{lrcccc}
+\toprule Par. & Valor & $I_f$ & $I^*$ & Régimen & Reb. \\ \midrule
+$b_1$ & 1.1 & 0.3222 & 0.3222 & $Z$ & 1 \\
+$b_1$ & 1.5 & 0.4250 & 0.4250 & $M$ & 2 \\
+$b_1$ & 3.0 & 0.4572 & 0.4572 & $M$ & 0 \\
+$b_2$ & 0.25 & 0.3892 & 0.3892 & $M$ & 1 \\
+$b_2$ & 3.0 & 0.2142 & 0.2142 & $Z$ & 0 \\
+$K$ & 0 & 0.3892 & 0.3892 & $M$ & 1 \\
+$K$ & 0.45 & 0.3636 & -- & indef. & 1 \\
+$\beta$ & 2 & 0.0100 & 0 & $M$ & 0 \\
+$\beta$ & 3 & 0.1818 & -- & indef. & 2 \\
+$\beta$ & 8 & 0.3792 & 0.3792 & $Z$ & 1 \\
+\bottomrule
+\end{tabular}
+\par{\scriptsize\textit{Nota.} $I_f$: $I(\tau=20)$; $I^*$: equilibrio analítico; Reb.: rebrotes.\par}
+\end{table}
+
+Los 28 casos del barrido uniparamétrico terminaron con estado OK, mínimo nulo y error de conservación $\le1.6\cdot10^{-14}$. La Tabla~\ref{tab:parametricos} resumió extremos y puntos de transición. Para $b_1\le1.1$, $I_f=0.3222$ (régimen $Z$) y para $b_1\ge1.5$ el régimen fue $M$ con $I_f$ entre $0.4250$ y $0.4572$, un aumento de hasta $42\,\%$. Al aumentar $b_2$, $I_f$ descendió de $0.3892$ ($b_2\le0.5$, régimen $M$) a $0.2142$ ($b_2=3$, régimen $Z$), una reducción de $45\,\%$. $K$ no modificó $I_f$ en el régimen $M$ ($K\le0.3$) y lo redujo de $0.3892$ a $0.3222$ en el régimen $Z$ ($K\ge0.6$); con $K=0.45$ el régimen fue indefinido. $I_f$ creció con $\beta$, desde $3.4\cdot10^{-11}$ ($\beta=1$) hasta $0.3792$ ($\beta=8$); con $\beta=2$ ($R_{00}=0.909$) $I_f=0.0100$ aún no alcanzaba $I^*=0$. Los rebrotes fueron 0, 1 o 2: dos con $b_1=1.5$ y $\beta=3$, y ninguno con $b_1=3$, $b_2=3$ ni $\beta\le2$. Fuera de $\beta\le2$, los casos con régimen definido coincidieron con $I^*$ hasta $1.9\cdot10^{-8}$.
+
+
+\subsection{Objetivo 4: condiciones para la endemia inducida}
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=0.68\textwidth]{imagenes/fig06_mapas_parametricos.png}
+\caption{$I$ final en $\tau=20$: (a) $b_1\times\beta$ con $b_2=0.92$, donde la línea discontinua es $R_{00}=1$; (b) $b_1\times b_2$ con $\beta=2$ ($R_{00}<1$). La línea blanca es el umbral analítico $I^*=10^{-3}$ y las cruces marcan los puntos sin régimen analítico definido.}
+\label{fig:mapas}
+\end{figure*}
+
+La Figura~\ref{fig:mapas} mostró los mapas $b_1\times\beta$ y $b_1\times b_2$. Los 961 puntos de cada mapa resultaron admisibles. La clasificación numérica coincidió con la analítica en $93.2\,\%$ (mapa a) y $91.7\,\%$ (mapa b) de los puntos, y en $97.8\,\%$ y $99.0\,\%$ si se excluyen los puntos de régimen analítico indefinido (45 y 71). Las discrepancias restantes fueron 20 puntos (mapa a) y 9 (mapa b) clasificados como endemia numérica y extinción analítica, con $R_{\rm ef}$ ligeramente menor que 1, donde el decaimiento fue lento a $\tau=20$. Respecto al control sin información, la información indujo endemia en 78 puntos (8.1\,\%) del mapa a y en 399 (41.5\,\%) del mapa b, y no indujo extinción en ninguno.
+
+
+\begin{table}[!htb]
+\centering\footnotesize
+\setlength{\tabcolsep}{3pt}
+\caption{Umbrales e infección de equilibrio analítica en los escenarios ($\tau=30$).}
+\label{tab:escenarios}
+\begin{tabular}{lcccccc}
+\toprule Esc. & $R_{00}$ & $R_{01}$ & $R_{02}$ & $I^*_{\rm ctl}$ & $I^*_{\rm acopl}$ & Error RK4 \\ \midrule
+I & 0.900 & 1.100 & 0.806 & 0 & 0.08814 & $2.8\cdot10^{-8}$ \\
+II & 1.100 & 1.228 & 0.900 & 0.08813 & 0 & $5.5\cdot10^{-8}$ \\
+\bottomrule
+\end{tabular}
+\par{\scriptsize\textit{Nota.} ctl: control sin información; acopl: con información; error frente a \texttt{ode15s}.\par}
+\end{table}
+
+\begin{figure*}[!t]
+\centering
+\begin{minipage}{0.49\textwidth}\centering
+\includegraphics[width=\linewidth]{imagenes/fig03_escenario_desinformacion.png}
+\end{minipage}\hfill
+\begin{minipage}{0.49\textwidth}\centering
+\includegraphics[width=\linewidth]{imagenes/fig04_escenario_escepticismo.png}
+\end{minipage}
+\caption{Escenario I, desinformación (izquierda), y escenario II, escepticismo (derecha). En cada uno: (a) $I$ con y sin información, (b) diferencia, (c) las seis variables con información y (d) las seis del control.}
+\label{fig:escen}
+\end{figure*}
+
+En los escenarios de Bulai et al. (2024) (Tabla~\ref{tab:escenarios}), el escenario I tuvo $R_{00}=0.9<1$, de modo que el control se extinguió ($I=1.6\cdot10^{-9}$ en $\tau=30$), pero con desinformación $R_{01}=1.1>1$ y $I$ terminó en $0.08814$ (Figura~\ref{fig:escen}, izquierda). En el escenario II el control fue endémico ($0.08813$, $R_{00}=1.1$) y con escepticismo $R_{02}=0.9<1$ y $I$ terminó en $1.5\cdot10^{-9}$ (Figura~\ref{fig:escen}, derecha). RK4 ($h=0.1$) coincidió con \texttt{ode15s} con errores de $2.8\cdot10^{-8}$ y $5.5\cdot10^{-8}$, y los errores de conservación fueron $\le8.9\cdot10^{-16}$. La diferencia entre la referencia estricta y la laxa fue de $1.7\cdot10^{-10}$ y $2.1\cdot10^{-10}$.
+
+
+
+
+\subsection{Síntesis}
+\emph{Estabilidad numérica.} RK4 y los Euler mostraron órdenes 4 y 1; RKF45 igualó la precisión de RK4 con menos evaluaciones; los explícitos quedaron limitados por $h<2.04$ y $h<2.82$ sin depender de $\varepsilon$, y Euler hacia atrás por Gauss--Seidel ($h\lesssim3.3$), no por el integrador. \emph{Comportamiento epidemiológico.} $b_1$, $b_2$, $K$ y $\beta$ cambiaron $I_f$ entre $0$ y $0.46$, y la información invirtió el destino de la epidemia en los dos escenarios y en el 8\,\% y el 41\,\% de los mapas.

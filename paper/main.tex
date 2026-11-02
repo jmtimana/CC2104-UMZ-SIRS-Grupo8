@@ -3,7 +3,6 @@
 \usepackage[T1]{fontenc}
 \usepackage[spanish]{babel}
 \usepackage{graphicx}
-\usepackage{adjustbox}
 \usepackage{amsmath,amssymb}
 \usepackage{array,booktabs,tabularx}
 \usepackage{mathtools}
@@ -11,17 +10,37 @@
 \usepackage{dblfloatfix}
 \usepackage[hidelinks]{hyperref}
 \usepackage{enumitem}
+\usepackage[section]{placeins}
 \urlstyle{same}
+\makeatletter\AtBeginDocument{\@ifundefined{spanishplainpercent}{}{\spanishplainpercent}\@ifundefined{decimalpoint}{}{\decimalpoint}}\makeatother
 \setlength{\parindent}{1.27cm}
-% Nombre del archivo .png y recuadro de reserva si no se ha exportado.
-\newcommand{\figpng}[1]{\IfFileExists{imagenes/#1}{\includegraphics[width=\columnwidth]{imagenes/#1}}{\fbox{\parbox[c][4.0cm][c]{.90\columnwidth}{\centering Figura pendiente:\\ \texttt{\detokenize{#1}}}}}}
-\newcommand{\fitcol}[1]{\resizebox{\columnwidth}{!}{#1}}
+
+% ---- Control de flotantes: permite que las figuras/tablas queden cerca de su cita ----
+\renewcommand{\topfraction}{0.90}
+\renewcommand{\bottomfraction}{0.80}
+\renewcommand{\textfraction}{0.10}
+\renewcommand{\floatpagefraction}{0.70}
+\renewcommand{\dbltopfraction}{0.90}
+\renewcommand{\dblfloatpagefraction}{0.70}
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{5}
+\setcounter{dbltopnumber}{3}
+
+
 % APA: número de tabla destacado, título en cursiva.
 \usepackage{caption}
 \captionsetup[table]{name=Tabla,labelfont=bf,textfont=it,labelformat=simple,labelsep=newline,justification=raggedright,singlelinecheck=false}
 \captionsetup[figure]{name=Figura,justification=raggedright,singlelinecheck=false}
-\newcommand{\tituloProyecto}{Simulación numérica de un modelo SIRS rápido--lento acoplado a difusión de información y desinformación}
+
+\newcommand{\tituloProyecto}{Estabilidad numérica y persistencia epidémica en un modelo SIRS rápido--lento con difusión de información y desinformación}
+
+% Encabezado del resumen en español (elsarticle usa \abstracttitle)
+\abstracttitle{Resumen}
+
 \begin{document}
+
+% ------------------------------ PORTADA ------------------------------
 \begin{titlepage}
 \onecolumn
 \centering
@@ -44,10 +63,12 @@ Feijoo Gonzales, Carlos Augusto & 201910028 \quad (carlos.feijoo@utec.edu.pe)
 \end{tabular}}
 \end{minipage}
 \vfill
-\textbf{Fecha de entrega:} 18/10/2026
+\textbf{Fecha de entrega:} 2 de noviembre de 2026
 \vspace*{1cm}
 \end{titlepage}
 \twocolumn
+
+% ------------------------- TÍTULO, RESUMEN, PALABRAS CLAVE -------------------------
 \begin{frontmatter}
 \title{\tituloProyecto}
 \author[utec]{Timana Carmona, Jose Manuel}
@@ -56,13 +77,26 @@ Feijoo Gonzales, Carlos Augusto & 201910028 \quad (carlos.feijoo@utec.edu.pe)
 \author[utec]{Davila Bazan, Santiago Sebastian}
 \author[utec]{Feijoo Gonzales, Carlos Augusto}
 \address[utec]{Universidad de Ingeniería y Tecnología, Departamento Académico de Ciencias}
+
+\begin{abstract}
+La información y la desinformación modifican la evolución de una epidemia, y sus escalas temporales muy distintas vuelven rígido el modelo que las acopla. Se modeló numéricamente el sistema UMZ-SIRS para analizar la estabilidad numérica y la persistencia de la epidemia bajo separación de escalas. Se compararon Euler explícito, Runge--Kutta de cuarto orden (RK4), Runge--Kutta--Fehlberg 4(5) (RKF45) y Euler hacia atrás con Newton--Raphson y Gauss--Seidel, validando las referencias con tolerancias decrecientes, integradores independientes y el equilibrio analítico; los parámetros se exploraron con barridos y mapas bidimensionales. En estabilidad numérica, RK4 mostró orden cuatro, RKF45 requirió unas cinco veces menos evaluaciones que RK4 para errores de $10^{-9}$ a $10^{-11}$ y los métodos explícitos exigieron pasos menores que 2.04 y 2.82. Gauss--Seidel limitó a Euler hacia atrás a pasos de 2.1 a 3.3, límite que desapareció con solución directa. En el plano epidemiológico, la desinformación convirtió una epidemia con $R_{00}=0.9$ en endemia ($I=0.088$), el escepticismo extinguió una endemia y la información indujo endemia con $R_{00}<1$ en el 8\,\% y el 41\,\% de los puntos de los mapas. Un integrador adaptativo resolvió la rigidez con menor costo y la información puede invertir el destino de la epidemia.
+
+\medskip\noindent\textbf{Palabras clave:} UMZ-SIRS; rigidez numérica; Euler hacia atrás; Gauss--Seidel; desinformación.
+\end{abstract}
 \end{frontmatter}
+
+% ------------------------------ CUERPO ------------------------------
 \input{01_introduccion}
 \input{02_metodologia}
 \input{03_resultados}
 \input{04_discusion}
-\clearpage
-\section*{Anexos y código}
-Los archivos de implementación en MATLAB (\texttt{.m} y \texttt{.mlx}), las figuras y las tablas de resultados se encuentran organizados en el repositorio del proyecto: \url{https://github.com/jmtimana/CC2104-UMZ-SIRS-Grupo8}. La reproducibilidad de los experimentos puede verificarse a partir de los scripts y los parámetros descritos en la Metodología.
+\input{06_conclusiones}
 \input{05_referencias}
+
+% ------------------------------ ANEXOS (nueva página) ------------------------------
+\clearpage
+\section*{Anexos}
+\subsection*{Anexo A. Código y reproducibilidad}
+Los archivos de implementación (\texttt{.m} y \texttt{.mlx}), las figuras y las tablas de resultados están en el repositorio del proyecto: \url{https://github.com/jmtimana/CC2104-UMZ-SIRS-Grupo8}. Cada experimento se ejecuta de forma independiente desde la carpeta de código y escribe sus resultados en \texttt{resultados/} y sus figuras en \texttt{figuras/}.
+
 \end{document}
