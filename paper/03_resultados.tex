@@ -134,7 +134,7 @@ $\beta$ & 8 & 0.3792 & 0.3792 & $Z$ & 1 \\
 \par{\scriptsize\textit{Nota.} $I_f$: $I(\tau=20)$; $I^*$: equilibrio analítico; Reb.: rebrotes.\par}
 \end{table}
 
-Los 28 casos del barrido uniparamétrico terminaron con estado OK, mínimo nulo y error de conservación $\le1.6\cdot10^{-14}$. La Tabla~\ref{tab:parametricos} resumió extremos y puntos de transición. Para $b_1\le1.1$, $I_f=0.3222$ (régimen $Z$) y para $b_1\ge1.5$ el régimen fue $M$ con $I_f$ entre $0.4250$ y $0.4572$, un aumento de hasta $42\,\%$. Al aumentar $b_2$, $I_f$ descendió de $0.3892$ ($b_2\le0.5$, régimen $M$) a $0.2142$ ($b_2=3$, régimen $Z$), una reducción de $45\,\%$. $K$ no modificó $I_f$ en el régimen $M$ ($K\le0.3$) y lo redujo de $0.3892$ a $0.3222$ en el régimen $Z$ ($K\ge0.6$); con $K=0.45$ el régimen fue indefinido. $I_f$ creció con $\beta$, desde $3.4\cdot10^{-11}$ ($\beta=1$) hasta $0.3792$ ($\beta=8$); con $\beta=2$ ($R_{00}=0.909$) $I_f=0.0100$ aún no alcanzaba $I^*=0$. Los rebrotes fueron 0, 1 o 2: dos con $b_1=1.5$ y $\beta=3$, y ninguno con $b_1=3$, $b_2=3$ ni $\beta\le2$. Fuera de $\beta\le2$, los casos con régimen definido coincidieron con $I^*$ hasta $1.9\cdot10^{-8}$.
+Los 28 casos del barrido uniparamétrico terminaron con estado OK, mínimo nulo y error de conservación $\le1.6\cdot10^{-14}$. La Tabla~\ref{tab:parametricos} resumió extremos y puntos de transición. Para comparar cada valor numérico con el umbral de endemia $I=10^{-3}$, se verificó si $I_f$ lo superaba: para $b_1\le1.1$, $I_f=0.3222$ (régimen $Z$) y para $b_1\ge1.5$ el régimen fue $M$ con $I_f$ entre $0.4250$ y $0.4572$, valores más de dos órdenes por encima del umbral y un aumento de hasta $42\,\%$. Al aumentar $b_2$, $I_f$ descendió de $0.3892$ ($b_2\le0.5$, régimen $M$) a $0.2142$ ($b_2=3$, régimen $Z$), una reducción de $45\,\%$ que aun así permaneció por encima del umbral. $K$ no modificó $I_f$ en el régimen $M$ ($K\le0.3$) y lo redujo de $0.3892$ a $0.3222$ en el régimen $Z$ ($K\ge0.6$); con $K=0.45$ el régimen fue indefinido. $I_f$ creció con $\beta$, desde $3.4\cdot10^{-11}$ ($\beta=1$, por debajo del umbral de endemia) hasta $0.3792$ ($\beta=8$, más de dos órdenes por encima); con $\beta=2$ ($R_{00}=0.909<1$) $I_f=0.0100$ superó el umbral numérico de endemia ($10^{-3}$) aunque el equilibrio analítico indicaba extinción ($I^*=0$). Los rebrotes fueron 0, 1 o 2: dos con $b_1=1.5$ y $\beta=3$, y ninguno con $b_1=3$, $b_2=3$ ni $\beta\le2$. Fuera de $\beta\le2$, los casos con régimen definido coincidieron con $I^*$ hasta $1.9\cdot10^{-8}$.
 
 
 \subsection{Objetivo 4: condiciones para la endemia inducida}
@@ -145,7 +145,7 @@ Los 28 casos del barrido uniparamétrico terminaron con estado OK, mínimo nulo 
 \label{fig:mapas}
 \end{figure*}
 
-La Figura~\ref{fig:mapas} mostró los mapas $b_1\times\beta$ y $b_1\times b_2$. Los 961 puntos de cada mapa resultaron admisibles. La clasificación numérica coincidió con la analítica en $93.2\,\%$ (mapa a) y $91.7\,\%$ (mapa b) de los puntos, y en $97.8\,\%$ y $99.0\,\%$ si se excluyen los puntos de régimen analítico indefinido (45 y 71). Las discrepancias restantes fueron 20 puntos (mapa a) y 9 (mapa b) clasificados como endemia numérica y extinción analítica, con $R_{\rm ef}$ ligeramente menor que 1, donde el decaimiento fue lento a $\tau=20$. Respecto al control sin información, la información indujo endemia en 78 puntos (8.1\,\%) del mapa a y en 399 (41.5\,\%) del mapa b, y no indujo extinción en ninguno.
+La Figura~\ref{fig:mapas} mostró los mapas $b_1\times\beta$ y $b_1\times b_2$. Los 961 puntos de cada mapa resultaron admisibles. La clasificación numérica coincidió con la analítica en $93.2\,\%$ (mapa a) y $91.7\,\%$ (mapa b) de los puntos, y en $97.8\,\%$ y $99.0\,\%$ si se excluyen los puntos de régimen analítico indefinido (45 y 71). Las discrepancias restantes fueron 20 puntos (mapa a) y 9 (mapa b) clasificados como endemia numérica y extinción analítica: en ellos $I_f>10^{-3}$ aunque $R_{\rm ef}$ era ligeramente menor que 1, umbral que predecía extinción, y el decaimiento fue lento a $\tau=20$. Respecto al control sin información, la información indujo endemia en 78 puntos (8.1\,\%) del mapa a y en 399 (41.5\,\%) del mapa b, es decir, en esos puntos $I_f$ superó el umbral $10^{-3}$ mientras el control permanecía por debajo; no indujo extinción en ninguno.
 
 
 \begin{table}[!htb]
@@ -159,7 +159,7 @@ I & 0.900 & 1.100 & 0.806 & 0 & 0.08814 & $2.8\cdot10^{-8}$ \\
 II & 1.100 & 1.228 & 0.900 & 0.08813 & 0 & $5.5\cdot10^{-8}$ \\
 \bottomrule
 \end{tabular}
-\par{\scriptsize\textit{Nota.} ctl: control sin información; acopl: con información; error frente a NDF.\par}
+\par{\scriptsize\textit{Nota.} ctl: control sin información; acopl: con información; error frente a NDF; umbral de endemia: $I=10^{-3}$.\par}
 \end{table}
 
 \begin{figure*}[!t]
@@ -174,7 +174,7 @@ II & 1.100 & 1.228 & 0.900 & 0.08813 & 0 & $5.5\cdot10^{-8}$ \\
 \label{fig:escen}
 \end{figure*}
 
-En los escenarios de Bulai et al. (2024) (Tabla~\ref{tab:escenarios}), el escenario I tuvo $R_{00}=0.9<1$, de modo que el control se extinguió ($I=1.6\cdot10^{-9}$ en $\tau=30$), pero con desinformación $R_{01}=1.1>1$ y $I$ terminó en $0.08814$ (Figura~\ref{fig:escen}, izquierda). En el escenario II el control fue endémico ($0.08813$, $R_{00}=1.1$) y con escepticismo $R_{02}=0.9<1$ y $I$ terminó en $1.5\cdot10^{-9}$ (Figura~\ref{fig:escen}, derecha). RK4 ($h=0.1$) coincidió con NDF con errores de $2.8\cdot10^{-8}$ y $5.5\cdot10^{-8}$, y los errores de conservación fueron $\le8.9\cdot10^{-16}$. La diferencia entre la referencia estricta y la laxa fue de $1.7\cdot10^{-10}$ y $2.1\cdot10^{-10}$.
+En los escenarios de Bulai et al. (2024) (Tabla~\ref{tab:escenarios}), el escenario I tuvo $R_{00}=0.9<1$, de modo que el control se extinguió ($I=1.6\cdot10^{-9}$ en $\tau=30$, unos seis órdenes por debajo del umbral $10^{-3}$), pero con desinformación $R_{01}=1.1>1$ y $I$ terminó en $0.08814$, casi dos órdenes por encima del umbral (Figura~\ref{fig:escen}, izquierda). En el escenario II el control fue endémico ($0.08813$, $R_{00}=1.1>1$, por encima del umbral) y con escepticismo $R_{02}=0.9<1$ y $I$ terminó en $1.5\cdot10^{-9}$, por debajo del umbral (Figura~\ref{fig:escen}, derecha). RK4 ($h=0.1$) coincidió con NDF con errores de $2.8\cdot10^{-8}$ y $5.5\cdot10^{-8}$, y los errores de conservación fueron $\le8.9\cdot10^{-16}$. La diferencia entre la referencia estricta y la laxa fue de $1.7\cdot10^{-10}$ y $2.1\cdot10^{-10}$.
 
 
 
